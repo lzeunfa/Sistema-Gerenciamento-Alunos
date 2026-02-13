@@ -133,9 +133,5 @@
     </div>
 
     <script src="ASSETS/JS/login.js"></script>
-
-    <script>
-        
-    </script>
 </body>
 </html>
