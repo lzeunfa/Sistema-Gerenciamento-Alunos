@@ -1,3 +1,6 @@
+<?php
+    session_start();
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -127,7 +130,12 @@
                         Entrar
                     </button>
                 </form>
-
+                <?php 
+                    if(isset($_SESSION['login_error'])){
+                        echo("<script>alert('".$_SESSION['login_error']."')</scritp>"); //altere esta linha como achar melhor, primo!! kkkk
+                        unset($_SESSION['login_error']);
+                    }
+                ?>
             </div>
         </div>
     </div>
