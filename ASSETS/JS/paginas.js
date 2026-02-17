@@ -14,4 +14,3 @@ linksOpcoes.forEach((link) =>{
     });
 
 })
-
