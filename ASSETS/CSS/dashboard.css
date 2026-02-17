@@ -1,0 +1,42 @@
+@charset "UTF-8";
+
+/*configs gerais*/
+*{
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+}
+
+:root{
+    --brancoGelo: #F6F8FA;
+    --branco: white;
+    --textoAzul: #4B61A1;
+}
+
+body{
+    background-color: var(--brancoGelo);
+}
+
+/*Inicio area header*/
+header{
+    background-color: var(--branco);
+
+    height: 10vh;
+
+    width: 100vw;
+
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.325);
+}
+
+.logoGKT{
+    border-radius: 50%;
+
+    width: 80px;
+    height: 80px;
+}
+
+.textoAzul{
+    color: var(--textoAzul);
+}
+
+/*Fim area header*/
