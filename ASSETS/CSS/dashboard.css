@@ -11,11 +11,61 @@
     --brancoGelo: #F6F8FA;
     --branco: white;
     --textoAzul: #4B61A1;
+    --azulClaro: #1F3B8F;
+    --azulEscuro: #06133C;
+    --azulSelecionado: #263C81;
 }
 
 body{
     background-color: var(--brancoGelo);
 }
+
+/*Inicio area menu*/
+#menuLateral{
+    display: none;
+}
+
+#bannerMenu{
+    background-color: var(--azulClaro);
+
+    color: white;
+
+    height: 10vh;
+}
+
+#opcoesMenu{
+    background-color: var(--azulEscuro);
+
+    height: 100vh;
+}
+
+.linkOpcoes{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background-color: var(--azulEscuro);
+
+    color: white;
+
+    text-decoration: none;
+
+    height: 10vh;
+
+    border-bottom: 1px solid white;
+
+    transition: .5s;
+}
+
+.linkOpcoes:hover{
+    background-color: var(--azulSelecionado);
+}
+
+.linkSelecionado{
+    background-color: var(--azulSelecionado);
+}
+
+/*Fim area menu*/
 
 /*Inicio area header*/
 header{

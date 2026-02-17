@@ -1,0 +1,41 @@
+@charset "UTF-8";
+
+@media screen and (min-width:900px) and (max-width: 1200px) {
+
+    #menuHeader{
+        display: flex;
+    }
+
+    #bannerMenu{
+        height: 20vh;
+    }
+
+    #menuLateral{
+        display: flex;
+        flex-direction: column;
+
+        width: 30vw;
+    }
+
+    header{
+        height: 20vh;
+    }
+
+}
+
+@media screen and (min-width:1201px){
+    #menuLateral{
+        display: flex;
+        flex-direction: column;
+
+        width: 20vw;
+    }
+
+    header{
+        height: 20vh;
+    }
+
+    #bannerMenu{
+        height: 20vh;
+    }
+}
