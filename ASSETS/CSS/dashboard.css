@@ -14,6 +14,7 @@
     --azulClaro: #1F3B8F;
     --azulEscuro: #06133C;
     --azulSelecionado: #263C81;
+    --bckgTotalAlunos: #1E3B93;
 }
 
 body{
@@ -31,17 +32,18 @@ body{
     color: white;
 
     height: 10vh;
+
+    border-bottom: 2px solid red;
 }
 
 #opcoesMenu{
     background-color: var(--azulEscuro);
 
-    height: 100vh;
+    height: 80vh;
 }
 
 .linkOpcoes{
     display: flex;
-    justify-content: center;
     align-items: center;
 
     background-color: var(--azulEscuro);
@@ -55,10 +57,16 @@ body{
     border-bottom: 1px solid white;
 
     transition: .5s;
+
+    padding: 20px;
 }
 
 .linkOpcoes:hover{
     background-color: var(--azulSelecionado);
+}
+
+.linkOpcoes img{
+    margin-right: 20px;
 }
 
 .linkSelecionado{
@@ -94,3 +102,40 @@ header{
 }
 
 /*Fim area header*/
+
+/*conteudo do dashboard*/
+.containerInfos{
+    background-color: white;
+
+    box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.381);
+
+    padding: 10px;
+
+    width: 333px;
+
+    border-radius: 10px;
+}
+
+.containerIconeInfos{
+    background-color: var(--bckgTotalAlunos);
+
+    width: 60px;
+    height: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.648);
+}
+
+.containerIconeInfos img{
+    width: 40px;
+}
+
+#quantidadeAlunos{
+    border-left: 5px solid var(--bckgTotalAlunos);
+    box-sizing: border-box;
+}

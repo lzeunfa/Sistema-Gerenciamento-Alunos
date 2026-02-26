@@ -16,7 +16,7 @@
         if($userPass == $data['password_user']){
             $_SESSION['user_id'] =  $data['id_user'];
             $_SESSION['user_name'] = $userName;
-            header('Location: ../../index.php'); //mude para o arquivo  do dashboard
+            header('Location: ../../sistema.html'); //mude para o arquivo  do dashboard
             exit();
         }else{
             $_SESSION['login_error'] = "Senha incorreta!";
