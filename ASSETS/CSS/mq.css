@@ -32,10 +32,25 @@
     }
 
     header{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #menuHeader{
+        display: flex;
+    }
+
+    header{
         height: 20vh;
     }
 
     #bannerMenu{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+
         height: 20vh;
     }
 }

@@ -71,11 +71,15 @@ body{
 header{
     background-color: var(--branco);
 
-    height: 10vh;
+    height: 20vh;
 
     width: 100vw;
 
     box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.325);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .logoGKT{
