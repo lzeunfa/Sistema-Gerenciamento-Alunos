@@ -19,6 +19,7 @@
 
     header{
         height: 20vh;
+        width: 70vw;
     }
 
 }
@@ -35,14 +36,13 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+
+        height: 20vh;
+        width: 80vw;
     }
 
     #menuHeader{
         display: flex;
-    }
-
-    header{
-        height: 20vh;
     }
 
     #bannerMenu{
