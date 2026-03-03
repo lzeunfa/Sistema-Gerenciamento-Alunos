@@ -38,7 +38,7 @@
         <div class="login-wrapper">
             <!-- Left Side - Branding -->
             <div class="brand-side">
-                <div class="combat-silhouette"></div>
+                
                 
                 <div class="brand-content">
                     <div class="logo-large">GKT</div>
