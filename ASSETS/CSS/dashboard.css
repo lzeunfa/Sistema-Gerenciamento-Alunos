@@ -15,6 +15,9 @@
     --azulEscuro: #06133C;
     --azulSelecionado: #263C81;
     --bckgTotalAlunos: #1E3B93;
+    --bckgTurmas: #EF7A0C;
+    --bckgPendentes: #DC2626;
+    --bckgLucro: #18AA4E;
 }
 
 body{
@@ -24,6 +27,8 @@ body{
 /*Inicio area menu*/
 #menuLateral{
     display: none;
+
+    height: 100rvh;
 }
 
 #bannerMenu{
@@ -39,7 +44,7 @@ body{
 #opcoesMenu{
     background-color: var(--azulEscuro);
 
-    height: 80vh;
+    height: 100%;
 }
 
 .linkOpcoes{
@@ -80,8 +85,7 @@ header{
     background-color: var(--branco);
 
     height: 20vh;
-
-    width: 100vw;
+    width: 100%;
 
     box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.325);
 
@@ -104,6 +108,20 @@ header{
 /*Fim area header*/
 
 /*conteudo do dashboard*/
+
+/*inicio area de infos cards*/
+.textoEscuro{
+    color: black !important;
+}
+
+#infosAcademia p, #opcoesGerenciamento p{
+    color: rgb(109, 109, 109);
+
+    font-weight: bolder;
+
+    font-size: 1.3em;
+}
+
 .containerInfos{
     background-color: white;
 
@@ -114,6 +132,14 @@ header{
     width: 333px;
 
     border-radius: 10px;
+
+    margin: 10px 5px 10px 5px;
+}
+
+.containerInfos:hover{
+    position: relative;
+
+    top: -5px;
 }
 
 .containerIconeInfos{
@@ -131,11 +157,126 @@ header{
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.648);
 }
 
-.containerIconeInfos img{
+#iconeQtdTurmas{
+    background-color: var(--bckgTurmas);
+}
+
+#iconeQtdPendentes{
+    background-color: var(--bckgPendentes);
+}
+
+#iconeLucroBruto{
+    background-color: var(--bckgLucro);
+}
+
+.containerIconeInfos img, .iconeOpcoes img{
     width: 40px;
+    box-sizing: border-box;
 }
 
 #quantidadeAlunos{
     border-left: 5px solid var(--bckgTotalAlunos);
-    box-sizing: border-box;
 }
+
+#quantidadeTurmas{
+    border-left: 5px solid var(--bckgTurmas);
+}
+
+#quantidadeAlunosPendentes{
+    border-left: 5px solid var(--bckgPendentes);
+}
+
+#quantidadeLucroBruto{
+    border-left: 5px solid var(--bckgLucro);
+}
+
+/*fim area de infos cards*/
+
+#divisor{
+    background-color: var(--azulClaro);
+
+    width: 100%;
+
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.648);
+}
+
+/*fim divisor*/
+
+/*inicio opcoes de gerenciamento*/
+
+.containerOpcoesGerenciamento{
+    background-color: white;
+
+    box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.381);
+
+    padding: 10px;
+
+    width: 300px;
+
+    border-radius: 10px;
+
+    margin: 10px 5px 10px 5px;
+
+    cursor: pointer;
+}
+
+.containerOpcoesGerenciamento:hover{
+    position: relative;
+
+    top: -5px;
+}
+
+.iconeOpcoes{
+    background-color: var(--bckgTotalAlunos);
+
+    width: 60px;
+    height: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.648);
+}
+
+.iconeOpcoes{
+    border-radius: 50%;
+}
+
+#cadastrarAlunosOp{
+    background-color: var(--bckgLucro);
+}
+
+#verTurmasOp{
+    background-color: var(--bckgTurmas);
+}
+
+#btSair{
+    width: 50%;
+    height: 50px;
+
+    border-radius: 10px;
+
+    border: none;
+
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.648);
+
+    color: var(--bckgPendentes);
+
+    font-weight: bolder;
+
+    font-size: 1.4em;
+
+    background-color: white;
+}
+
+#btSair:hover{
+    position: relative;
+
+    top: -5px;
+}
+
+
+/*fim opcoes de gerenciamento*/

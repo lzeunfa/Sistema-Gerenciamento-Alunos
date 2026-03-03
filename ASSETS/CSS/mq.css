@@ -4,6 +4,8 @@
 
     #menuHeader{
         display: flex;
+
+        height: 100%;
     }
 
     #bannerMenu{
@@ -15,11 +17,14 @@
         flex-direction: column;
 
         width: 30vw;
+
+        height: 100rvh;
     }
 
     header{
         height: 20vh;
-        width: 70vw;
+
+        width: 100%;
     }
 
 }
@@ -30,6 +35,8 @@
         flex-direction: column;
 
         width: 20vw;
+
+        min-height: 100vh;
     }
 
     header{
@@ -38,7 +45,7 @@
         align-items: center;
 
         height: 20vh;
-        width: 80vw;
+        width: 100%;
     }
 
     #menuHeader{
