@@ -1,15 +1,12 @@
 @charset "UTF-8";
 
+/*responsividade para telas médias*/
 @media screen and (min-width:900px) and (max-width: 1200px) {
 
     #menuHeader{
         display: flex;
 
         height: 100%;
-    }
-
-    #bannerMenu{
-        height: 20vh;
     }
 
     #menuLateral{
@@ -22,13 +19,14 @@
     }
 
     header{
-        height: 20vh;
+        height: 17.5vh;
 
         width: 100%;
     }
 
 }
 
+/*responsividade para telas grandes +*/
 @media screen and (min-width:1201px){
     #menuLateral{
         display: flex;
@@ -44,20 +42,11 @@
         justify-content: space-between;
         align-items: center;
 
-        height: 20vh;
+        height: 16.7vh;
         width: 100%;
     }
 
     #menuHeader{
         display: flex;
-    }
-
-    #bannerMenu{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-
-        height: 20vh;
     }
 }
