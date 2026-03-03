@@ -1,0 +1,109 @@
+<!--html da pagina do dashboard-->
+
+<!--area para infos da academia-->
+<section id="infosAcademia" class="d-flex flex-wrap justify-content-center">
+
+    <!--divs pros cards com as infos-->
+    <div id="quantidadeAlunos" class="containerInfos">
+
+        <div id="iconeQtdAlunos" class="containerIconeInfos">
+            <img src="ASSETS/IMGS/ICONES/iconeAlunos.png" alt="icone dois bonequinhos">
+        </div>
+
+        <!--recebe pesquisa da soma do sql do total de alunos-->
+        <p id="numTotalAlunos" class="textoEscuro">NUM</p>
+        <p>Total de alunos</p>
+
+    </div>
+
+    <div id="quantidadeTurmas" class="containerInfos">
+
+        <div id="iconeQtdTurmas" class="containerIconeInfos">
+            <img src="ASSETS/IMGS/ICONES/iconeTurmas.png" alt="icone dois bonequinhos">
+        </div>
+
+        <!--recebe pesquisa da soma do sql do total de turmas-->
+        <p id="numTurmas" class="textoEscuro">NUM</p>
+        <p>Turmas</p>
+
+    </div>
+
+    <!--esta div serve apenas paracentralizacao e organizacao de layout-->
+    <div class="d-flex flex-wrap justify-content-center">
+
+        <div id="quantidadeAlunosPendentes" class="containerInfos">
+            <div id="iconeQtdPendentes" class="containerIconeInfos">
+                <img src="ASSETS/IMGS/ICONES/exclamation-solid-full.png" alt="icone dois bonequinhos">
+            </div>
+            <!--recebe pesquisa da soma do sql do total de alunos com pendencias-->
+            <p id="numPendentes" class="textoEscuro">NUM</p>
+            <p>Aluno(s) com pendências</p>
+        </div>
+
+        <div id="quantidadeLucroBruto" class="containerInfos">
+            <div id="iconeLucroBruto" class="containerIconeInfos">
+                <img src="ASSETS/IMGS/ICONES/money-bill-solid-full.png" alt="icone dois bonequinhos">
+            </div>
+            <!--recebe pesquisa da soma do sql do total de mensalidades pagas-->
+            <p id="numLucroBruto" class="textoEscuro">R$ NUM</p>
+            <p>Lucro bruto</p>
+        </div>
+
+    </div>
+
+</section>
+
+<!--section com o divisor com a logo da gkt-->
+<section id="divisor" class="d-flex justify-content-center align-items-center mt-3 mb-3">
+    <img src="ASSETS/IMGS/LOGOS/logo_gktSF.png" alt="logo da academia gkt" width="100px">
+</section>
+
+<!--section container para as opcoes de gerenciamento-->
+<section id="opcoesGerenciamento" class="d-flex flex-column justify-content-center align-items-center">
+
+    <h1>Opções de gerenciamento</h1>
+
+    <!--div centralizadora das opcoes-->
+    <div class="d-flex flex-wrap justify-content-center">
+
+        <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">
+
+            <div id="gerenciarAlunosOp" class="iconeOpcoes">
+                <img src="ASSETS/IMGS/ICONES/iconeAlunos.png" alt="icone bonequinhos">
+            </div>
+
+            <p class="textoEscuro">Gerenciar Alunos</p>
+            <p>Visualizar todos alunos</p>
+
+        </div>
+
+        <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">
+
+            <div id="cadastrarAlunosOp" class="iconeOpcoes">
+                <img src="ASSETS/IMGS/ICONES/iconeCadastrar.png" alt="icone bonequinhos e simbolo de mais">
+            </div>
+
+            <p class="textoEscuro">Cadastrar</p>
+            <p>Cadastro alunos/professores</p>
+
+        </div>
+
+        <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">
+
+            <div id="verTurmasOp" class="iconeOpcoes">
+                <img src="ASSETS/IMGS/ICONES/iconeTurmas.png" alt="icone bonequinhos">
+            </div>
+
+            <p class="textoEscuro">Turmas</p>
+            <p>Visualizar turmas</p>
+
+        </div>
+
+    </div>
+
+    <button id="btSair" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+        <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
+        Sair
+    </button>
+
+</section>
