@@ -1,25 +1,138 @@
 <!--html da pagina dos alunos-->
 
-<table>
+<!--form que realiza filtro-->
+    <!--colocar action pro arquivo que faz o necessario para filtrar-->
+    <form id="form_filtros" action="" class="filter-form">
 
-    <tr>
-        <th>Data Mat</th>
-        <th>Nome</th>
-        <th>CPF</th>
-        <th>Arte Marcial</th>
-        <th>Plano</th>
-        <th>Situação</th>
-        <th>Ações</th>
-    </tr>
+            <label for="filtrando">Escolha um filtro:</label>
 
-    <tr>
-        <td>15/11/2025</td>
-        <td>Eliseu Nóbrega</td>
-        <td>01232344407</td>
-        <td>Muay Thai</td>
-        <td>2x</td>
-        <td>check</td>
-        <td>e | d</td>
-    </tr>
+            <select name="filtrando" id="filtrando">
 
-</table>
+                <option value="">=ESCOLHER=</option>
+
+                <option value="alunos_pendentes">PENDENTES</option>
+
+                <option value="alunos_pagos">PAGOS</option>
+
+                <option value="plano_2">PLANO 2X</option>
+
+                <option value="plano_3">PLANO 3X</option>
+
+                <option value="plano_4">PLANO 4X</option>
+
+            </select>
+
+            <button type="submit">FILTRAR</button>
+
+        </form>
+
+<div class="container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>DATA MAT</th>
+                <th>NOME</th>
+                <th>CPF</th>
+                <th>ARTE MARCIAL</th>
+                <th>PLANO</th>
+                <th>SITUAÇÃO</th>
+                <th>AÇÕES</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr>
+
+                <td>15/11/2025</td>
+                <td>Eliseu Nóbrega</td>
+                <td>012.323.444-07</td>
+
+                <td><span class="badge-arte">Muay Thai</span></td>
+
+                <td>2x</td>
+
+                <td>
+
+                    <div class="status">
+                        <span class="status-icon">✓</span>
+                    </div>
+
+                </td>
+
+                <td>
+                    
+                    <div class="acoes">
+
+                        <button class="btn-acao btn-edit" title="Editar">
+
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+
+                        </button>
+
+                        <button class="btn-acao btn-delete" title="Excluir">
+
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+
+                        </button>
+
+                    </div>
+
+                </td>
+            </tr>
+
+            <tr>
+                <td>20/08/2025</td>
+                <td>Felipe Zé</td>
+                <td>012.777.444-09</td>
+
+                <td><span class="badge-arte">Kick Boxing</span></td>
+
+                <td>3x</td>
+
+                <td>
+                    <div class="status">
+                        <span class="status-icon inactive">✗</span>
+                    </div>
+                </td>
+
+                <td>
+                    
+                    <div class="acoes">
+
+                        <button class="btn-acao btn-edit" title="Editar">
+
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+
+                        </button>
+
+                        <button class="btn-acao btn-delete" title="Excluir">
+
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+
+                        </button>
+
+                    </div>
+
+                </td>
+            </tr>
+            
+        </tbody>
+
+    </table>
+
+</div>

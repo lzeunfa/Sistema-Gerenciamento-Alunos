@@ -9,7 +9,6 @@ const linksMenu = document.querySelectorAll('.linkOpcoes');
 //2- caminho
 const paginaAtual = document.querySelector('#nomePA');
 const caminhoPaginaAtual = document.querySelector('#caminhoPA');
-
 /*para cada link é criado um evento de click
 onde é recebido seu atributo href destinado a pagina com conteudo html
 chamando a funcao converterHTML para poder usar o html
@@ -42,13 +41,9 @@ linksMenu.forEach(link => {
 
 //funcao parar carregar o arquivo do dashboard ao carregar a pagina do sistema.html
 async function aoCarregarPagina(){
-
+    
     //Adiciona a classe apenas ao link dashboard
     linksMenu[0].classList.add('linkSelecionado');
-
-    const urlBase = 'ASSETS/PAGINAS/DASHBOARD.html';
-    main.innerHTML = await converterHTML(urlBase);
-    
 }
 
 //funcao que recuperar o arquivo destinado com html
