@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Página do dashboard da GKT">
+    <title>Dashboard GKT</title>
+
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+
+    <!--css-->
+    <!--css do header esta neste css dashboard-->
+    <link rel="stylesheet" href="ASSETS/CSS/dashboard.css">
+
+    <!--css alunos-->
+    <link rel="stylesheet" href="ASSETS/CSS/alunos.css">
+    
+    <script></script>
+
+    <!--media querie css-->
+    <link rel="stylesheet" href="ASSETS/CSS/mq.css">
+
+    <!--bootstrap css-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+
+<body onload="aoCarregarPagina()">
+
+    <!--section para organizacao de conteudos menu e header-->
+    <section id="menuHeader" class="d-flex">
+
+        <div id="menuLateral">
+
+            <!--banner com nome da academia-->
+            <div id="bannerMenu">
+
+                <h1>GKT</h1>
+                <p>Artes Marciais</p>
+
+            </div>
+
+            <div id="opcoesMenu" class="d-flex flex-column">
+
+                <a href="DASHBOARD" id="dashboardPage" class="linkOpcoes">
+                    <img src="ASSETS/IMGS/ICONES/iconeDashboard.png" alt="icone simbolizando area de dashboard" width="35px">
+                    DASHBOARD
+                </a>
+
+                <a href="ALUNOS" id="studentsPage" class="linkOpcoes">
+                    <img src="ASSETS/IMGS/ICONES/iconeAlunos.png" alt="icone simbolizando area de dashboard" width="35px">
+                    ALUNOS
+                </a>
+                
+                <a href="CADASTRAR" id="registerPage" class="linkOpcoes">
+                    <img src="ASSETS/IMGS/ICONES/iconeCadastrar.png" alt="icone simbolizando area de dashboard" width="35px">
+                    CADASTRAR
+                </a>
+                
+                <a href="TURMAS" id="classesPage" class="linkOpcoes">
+                    <img src="ASSETS/IMGS/ICONES/iconeTurmas.png" alt="icone simbolizando area de dashboard" width="35px">
+                    TURMAS
+                </a>
+
+            </div>
+
+        </div>
+
+        <section id="sectionCentralizadora" class="d-flex flex-column w-100">
+
+            <!--cabecalho-->
+            <header>
+                <!--section para conteúdo informativo da pagina no header-->
+                <section class="d-flex flex-column">
+
+                    <div class="d-flex align-items-center justify-content-center">
+
+                        <!--icone da pagina-->
+                        <img src="ASSETS/IMGS/ICONES/house-regular-full.svg" alt="icone de casa simbolizando pagina de dashboard" width="50px">
+
+                        <!--este texto muda de acordo com a página acessada-->
+                        <h1 class="m-0" id="nomePA">dashboard</h1>
+
+                    </div>
+
+                    <!--texto dentro do span deve mudar de acordo com a página-->
+                    <p class="textoAzul ps-2">home / <span id="caminhoPA">dashboard</span></p>
+
+                </section>
+                <!--logo da gkt-->
+                <img class="logoGKT me-2" src="ASSETS/IMGS/LOGOS/logo_gktCF.png" alt="logo da academia gkt">
+            </header>
+
+            <!--tag que recebera troca de html via interação-->
+            <main id="mainConteudoPagina" class="mt-2 d-flex align-items-center justify-content-center flex-column">
+                
+                <!--area para infos da academia-->
+                <section id="infosAcademia" class="d-flex flex-wrap justify-content-center">
+
+                    <!--divs pros cards com as infos-->
+                    <div id="quantidadeAlunos" class="containerInfos">
+
+                        <div id="iconeQtdAlunos" class="containerIconeInfos">
+                            <img src="ASSETS/IMGS/ICONES/iconeAlunos.png" alt="icone dois bonequinhos">
+                        </div>
+
+                        <!--recebe pesquisa da soma do sql do total de alunos-->
+                        <p id="numTotalAlunos" class="textoEscuro">NUM</p>
+                        <p>Total de alunos</p>
+
+                    </div>
+
+                    <div id="quantidadeTurmas" class="containerInfos">
+
+                        <div id="iconeQtdTurmas" class="containerIconeInfos">
+                            <img src="ASSETS/IMGS/ICONES/iconeTurmas.png" alt="icone dois bonequinhos">
+                        </div>
+
+                        <!--recebe pesquisa da soma do sql do total de turmas-->
+                        <p id="numTurmas" class="textoEscuro">NUM</p>
+                        <p>Turmas</p>
+
+                    </div>
+
+                    <!--esta div serve apenas paracentralizacao e organizacao de layout-->
+                    <div class="d-flex flex-wrap justify-content-center">
+
+                        <div id="quantidadeAlunosPendentes" class="containerInfos">
+                            <div id="iconeQtdPendentes" class="containerIconeInfos">
+                                <img src="ASSETS/IMGS/ICONES/exclamation-solid-full.png" alt="icone dois bonequinhos">
+                            </div>
+                            <!--recebe pesquisa da soma do sql do total de alunos com pendencias-->
+                            <p id="numPendentes" class="textoEscuro">NUM</p>
+                            <p>Aluno(s) com pendências</p>
+                        </div>
+
+                        <div id="quantidadeLucroBruto" class="containerInfos">
+                            <div id="iconeLucroBruto" class="containerIconeInfos">
+                                <img src="ASSETS/IMGS/ICONES/money-bill-solid-full.png" alt="icone dois bonequinhos">
+                            </div>
+                            <!--recebe pesquisa da soma do sql do total de mensalidades pagas-->
+                            <p id="numLucroBruto" class="textoEscuro">R$ NUM</p>
+                            <p>Lucro bruto</p>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!--section com o divisor com a logo da gkt-->
+                <section id="divisor" class="d-flex justify-content-center align-items-center mt-3 mb-3">
+                    <img src="ASSETS/IMGS/LOGOS/logo_gktSF.png" alt="logo da academia gkt" width="100px">
+                </section>
+
+                <!--section container para as opcoes de gerenciamento-->
+                <section id="opcoesGerenciamento" class="d-flex flex-column justify-content-center align-items-center">
+
+                    <h1>Opções de gerenciamento</h1>
+
+                    <!--div centralizadora das opcoes-->
+                    <div class="d-flex flex-wrap justify-content-center">
+
+                        <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">
+
+                            <div id="gerenciarAlunosOp" class="iconeOpcoes">
+                                <img src="ASSETS/IMGS/ICONES/iconeAlunos.png" alt="icone bonequinhos">
+                            </div>
+
+                            <p class="textoEscuro">Gerenciar Alunos</p>
+                            <p>Visualizar todos alunos</p>
+
+                        </div>
+
+                        <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">
+
+                            <div id="cadastrarAlunosOp" class="iconeOpcoes">
+                                <img src="ASSETS/IMGS/ICONES/iconeCadastrar.png" alt="icone bonequinhos e simbolo de mais">
+                            </div>
+
+                            <p class="textoEscuro">Cadastrar</p>
+                            <p>Cadastro alunos/professores</p>
+
+                        </div>
+
+                        <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">
+
+                            <div id="verTurmasOp" class="iconeOpcoes">
+                                <img src="ASSETS/IMGS/ICONES/iconeTurmas.png" alt="icone bonequinhos">
+                            </div>
+
+                            <p class="textoEscuro">Turmas</p>
+                            <p>Visualizar turmas</p>
+
+                        </div>
+
+                    </div>
+
+                    <button id="btSair" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+                        <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
+                        Sair
+                    </button>
+
+                </section>
+
+            </main>
+
+        </section>
+
+    </section>
+
+    <!--js das paginas e interações-->
+    <script src="ASSETS/JS/controle_paginas.js"></script>
+
+    <!--bootstrap js-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>
