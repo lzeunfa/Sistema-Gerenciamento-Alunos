@@ -1,2 +1,165 @@
 <!--html da pagina para casdstros-->
-<h2>Pagina cadastrar</h2>
+<div class="container">
+    <!-- Cabeçalho -->
+    <div class="page-header">
+        <h1>Cadastrar Novo Aluno</h1>
+        <p>Preencha os dados abaixo para cadastrar um novo aluno na academia</p>
+    </div>
+
+    <!-- Formulário -->
+    <div class="form-container">
+        <form id="cadastroForm" method="POST">
+            <!-- Nome -->
+            <div class="form-group">
+                <label class="form-label">
+                    Nome Completo <span class="required">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    class="form-input" 
+                    name="nome"
+                    placeholder="Digite o nome completo do aluno"
+                    required
+                >
+            </div>
+
+            <!-- CPF e Data de Nascimento -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        CPF <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        name="cpf"
+                        placeholder="000.000.000-00"
+                        maxlength="14"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Data de Nascimento <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        class="form-input" 
+                        name="data_nascimento"
+                        required
+                    >
+                </div>
+            </div>
+
+            <!-- Gênero -->
+            <div class="form-group">
+                <label class="form-label">
+                    Gênero <span class="required">*</span>
+                </label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input 
+                            type="radio" 
+                            id="masculino" 
+                            name="genero" 
+                            value="masculino"
+                            required
+                        >
+                        <label for="masculino">Masculino</label>
+                    </div>
+                    <div class="radio-option">
+                        <input 
+                            type="radio" 
+                            id="feminino" 
+                            name="genero" 
+                            value="feminino"
+                            required
+                        >
+                        <label for="feminino">Feminino</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modalidades -->
+            <div class="form-group">
+                <label class="form-label" required>
+                    Modalidade(s) <span class="required">*</span>
+                </label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option">
+                        <input 
+                            type="checkbox" 
+                            id="muaythai" 
+                            name="modalidade[]" 
+                            value="muaythai"
+                        >
+                        <label for="muaythai">Muay Thai</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input 
+                            type="checkbox" 
+                            id="personalfight" 
+                            name="modalidade[]" 
+                            value="personalfight"
+                        >
+                        <label for="personalfight">Personal Fight</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input 
+                            type="checkbox" 
+                            id="karate" 
+                            name="modalidade[]" 
+                            value="karate"
+                        >
+                        <label for="karate">Karatê</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input 
+                            type="checkbox" 
+                            id="kickfem" 
+                            name="modalidade[]" 
+                            value="kickfem"
+                        >
+                        <label for="kickfem">Kick Fem</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input 
+                            type="checkbox" 
+                            id="kickboxing" 
+                            name="modalidade[]" 
+                            value="kickboxing"
+                        >
+                        <label for="kickboxing">Kickboxing</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plano -->
+            <div class="form-group">
+                <label class="form-label">
+                    Plano <span class="required">*</span>
+                </label>
+                <select class="form-select" name="plano" required>
+                    <option value="">Selecione o plano</option>
+                    <option value="2x">2x por semana</option>
+                    <option value="3x">3x por semana</option>
+                    <option value="4x">4x por semana</option>
+                </select>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="form-actions">
+                <button type="reset" class="btn btn-secondary">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Cadastrar Aluno
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

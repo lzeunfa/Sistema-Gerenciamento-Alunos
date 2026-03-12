@@ -20,71 +20,6 @@
     --bckgLucro: #18AA4E;
 }
 
-body{
-    background-color: var(--brancoGelo);
-}
-
-/*Inicio area menu*/
-#menuLateral{
-    display: none;
-
-    height: 100rvh;
-}
-
-#bannerMenu{
-    background-color: var(--azulClaro);
-
-    color: white;
-
-    height: 20vh;
-
-    border-bottom: 2px solid red;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-}
-
-#opcoesMenu{
-    background-color: var(--azulEscuro);
-
-    height: 100%;
-}
-
-.linkOpcoes{
-    display: flex;
-    align-items: center;
-
-    background-color: var(--azulEscuro);
-
-    color: white;
-
-    text-decoration: none;
-
-    height: 10vh;
-
-    border-bottom: 1px solid white;
-
-    transition: .5s;
-
-    padding: 20px;
-}
-
-.linkOpcoes:hover{
-    background-color: var(--azulSelecionado);
-}
-
-.linkOpcoes img{
-    margin-right: 20px;
-}
-
-.linkSelecionado{
-    background-color: var(--azulSelecionado);
-}
-
-/*Fim area menu*/
-
 /*Inicio area header*/
 header{
     background-color: var(--branco);
@@ -134,7 +69,7 @@ header{
 
     padding: 10px;
 
-    width: 333px;
+    width: 300px;
 
     border-radius: 10px;
 
