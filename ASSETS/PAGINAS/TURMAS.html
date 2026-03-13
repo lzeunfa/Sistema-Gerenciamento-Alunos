@@ -1,2 +1,103 @@
 <!--html da pagina turmas-->
-<h2>Pagina Turmas</h2>
+<!--form que realiza filtro-->
+<!--colocar action pro arquivo que faz o necessario para filtrar-->
+<form id="form_filtrosTurmas" action="" class="filter-form">
+
+    <label for="filtrando">Escolha um filtro:</label>
+
+    <select name="filtrando" id="filtrando">
+
+        <option value="">=ESCOLHER=</option>
+
+        <option value="muayThai">Muay Thai</option>
+
+        <option value="personalFight">Personal Fight</option>
+
+        <option value="karate">Karatê</option>
+
+        <option value="kickFem">Kick Fem</option>
+
+        <option value="kickboxing">Kickboxing</option>
+
+    </select>
+
+    <button type="submit">FILTRAR</button>
+
+</form>
+
+<!--se nao tiver sido filtrado a turma essa msg deve aparecer-->
+<h1>Nenhuma turma foi  filtrada ainda!</h1>
+
+<!--caso a pesquisa nao retorne nada-->
+<h1>Nenhum resultado foi encontrado!</h1>
+
+<div class="container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>DATA MAT</th>
+                <th>NOME</th>
+                <th>CPF</th>
+                <th>ARTE MARCIAL</th>
+                <th>PLANO</th>
+                <th>SITUAÇÃO</th>
+                <th>AÇÕES</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr>
+
+                <td>15/11/2025</td>
+                <td>Eliseu Nóbrega</td>
+                <td>012.323.444-07</td>
+
+                <td><span class="badge-arte">Muay Thai</span></td>
+
+                <td>2x</td>
+
+                <td>
+
+                    <div class="status">
+                        <span class="status-icon">✓</span>
+                    </div>
+
+                </td>
+
+                <td>
+                    
+                    <div class="acoes">
+
+                        <button class="btn-acao btn-edit" title="Editar">
+
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+
+                        </button>
+
+                        <button class="btn-acao btn-delete" title="Excluir">
+
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+
+                        </button>
+
+                    </div>
+
+                </td>
+            </tr>
+            
+        </tbody>
+
+    </table>
+
+</div>
