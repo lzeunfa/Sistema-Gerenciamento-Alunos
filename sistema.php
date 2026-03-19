@@ -1,3 +1,7 @@
+<?php
+    include("trava.php");
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -200,7 +204,9 @@
 
                     </div>
 
-                    <button id="btSair" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+                    <button id="btSair" 
+                    onclick="window.location.href='logout.php'"
+                    class="mb-5 mt-5 d-flex justify-content-center align-items-center">
                         <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
                         Sair
                     </button>
