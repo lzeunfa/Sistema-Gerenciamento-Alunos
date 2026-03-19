@@ -1,7 +1,6 @@
 <?php
-    //criando conexao no banco de dados
-    use Dom\Mysql;
     
+    use Dom\Mysql;
     $host_name = "localhost";
     $user_name = "root";
     $password = "";
