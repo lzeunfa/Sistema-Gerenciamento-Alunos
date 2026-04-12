@@ -39,7 +39,7 @@
     <!--section para organizacao de conteudos menu e header-->
     <section id="menuHeader" class="d-flex">
 
-        <div id="menuLateral">
+        <aside id="menuLateral">
 
             <!--banner com nome da academia-->
             <div id="bannerMenu">
@@ -73,7 +73,7 @@
 
             </div>
 
-        </div>
+        </aside>
 
         <section id="sectionCentralizadora" class="d-flex flex-column w-100">
 

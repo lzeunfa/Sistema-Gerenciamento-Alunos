@@ -8,7 +8,7 @@ body{
 #menuLateral{
     display: none;
 
-    height: auto;
+    
 }
 
 #bannerMenu{
@@ -29,7 +29,7 @@ body{
 #opcoesMenu{
     background-color: var(--azulEscuro);
 
-    height: 100%;
+    flex-grow: 1;
 }
 
 .linkOpcoes{
