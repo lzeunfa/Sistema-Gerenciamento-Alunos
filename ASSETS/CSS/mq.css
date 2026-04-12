@@ -3,10 +3,6 @@
 /*responsividade para telas médias*/
 @media screen and (min-width:910px) and (max-width: 1200px) {
 
-    body{
-        height: 100dvh;
-    }
-
     #menuHeader{
         display: flex;
 
