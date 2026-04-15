@@ -1,4 +1,6 @@
-<?php 
+
+<?php
+    
     session_start();
     require("../CONECTION/config.php");
     $userName = $_POST['inputUser'] ?? '';
