@@ -1,0 +1,1 @@
+<?php require 'c:/xampp/htdocs/Gkt/Sistema-Gerenciamento-Alunos/BACKEND/CONNECTION/config.php';  = Database::getConexao();  = ->query('SELECT TOP 1 * FROM ALUNOS'); print_r(->fetch(PDO::FETCH_ASSOC)); ?>

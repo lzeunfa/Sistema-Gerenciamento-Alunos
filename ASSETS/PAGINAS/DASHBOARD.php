@@ -1,4 +1,10 @@
 <!--html da pagina do dashboard-->
+<?php
+require_once "BACKEND/CONTROLLER/funcoes.php";
+$totalAlunos = contarAlunosCompletos();
+$totalTurmas = count(listarModalidades());
+$totalPendentes = contarAlunosCompletos('alunos_pendentes');
+?>
 
 <!--area para infos da academia-->
 <section id="infosAcademia" class="d-flex flex-wrap justify-content-center">
@@ -11,7 +17,7 @@
         </div>
 
         <!--recebe pesquisa da soma do sql do total de alunos-->
-        <p id="numTotalAlunos" class="textoEscuro">NUM</p>
+        <p id="numTotalAlunos" class="textoEscuro"><?= $totalAlunos ?></p>
         <p>Total de alunos</p>
 
     </div>
@@ -23,7 +29,7 @@
         </div>
 
         <!--recebe pesquisa da soma do sql do total de turmas-->
-        <p id="numTurmas" class="textoEscuro">NUM</p>
+        <p id="numTurmas" class="textoEscuro"><?= $totalTurmas ?></p>
         <p>Turmas</p>
 
     </div>
@@ -36,7 +42,7 @@
                 <img src="ASSETS/IMGS/ICONES/exclamation-solid-full.png" alt="icone dois bonequinhos">
             </div>
             <!--recebe pesquisa da soma do sql do total de alunos com pendencias-->
-            <p id="numPendentes" class="textoEscuro">NUM</p>
+            <p id="numPendentes" class="textoEscuro"><?= $totalPendentes ?></p>
             <p>Aluno(s) com pendências</p>
         </div>
 
@@ -101,7 +107,7 @@
 
     </div>
 
-    <button id="btSair" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+    <button id="btSair" onclick="window.location.href='logout.php'" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
         <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
         Sair
     </button>
