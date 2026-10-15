@@ -17,6 +17,8 @@ function togglePassword() {
     }
 }
 
+document.getElementById('passwordToggle').addEventListener('click', togglePassword);
+
 // Form submission with loading state
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     

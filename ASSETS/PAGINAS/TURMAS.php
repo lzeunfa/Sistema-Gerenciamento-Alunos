@@ -1,7 +1,7 @@
 <!--html da pagina turmas-->
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
-$filtroEscolhido = isset($_GET['filtrando']) ? $_GET['filtrando'] : '';
+$filtroEscolhido = isset($_GET['filtrando']) && is_string($_GET['filtrando']) ? $_GET['filtrando'] : '';
 
 $limite = 40;
 $pagina_atual = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
@@ -23,8 +23,8 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
         $todasModalidades = listarModalidades();
         foreach ($todasModalidades as $mod): 
         ?>
-            <option value="<?= $mod['MODALIDADECOD'] ?>" <?= ($filtroEscolhido == $mod['MODALIDADECOD']) ? 'selected' : '' ?>>
-                <?= $mod['NOMEMOD'] ?>
+            <option value="<?= e($mod['MODALIDADECOD']) ?>" <?= ($filtroEscolhido == $mod['MODALIDADECOD']) ? 'selected' : '' ?>>
+                <?= e($mod['NOMEMOD']) ?>
             </option>
         <?php endforeach; ?>
     </select>
@@ -60,15 +60,15 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
                             ?>
                         </td>
                         <td>
-                            <?= $aluno['ALUMATRICULA'] ?>
+                            <?= e($aluno['ALUMATRICULA']) ?>
                         </td>
-                        <td><?= $aluno['ALUNOME'] ?></td>
-                        <td><?= $aluno['ALUCPF'] ?></td>
-                        <td><span class="badge-arte"><?= $aluno['ARTES'] ?></span></td>
+                        <td><?= e($aluno['ALUNOME']) ?></td>
+                        <td><?= e(mascararCpf($aluno['ALUCPF'])) ?></td>
+                        <td><span class="badge-arte"><?= e($aluno['ARTES']) ?></span></td>
                         <td>
-                            <?= $aluno['PLANO'] ?>
+                            <?= e($aluno['PLANO']) ?>
                             <br>
-                            <small><?= $aluno['FREQUENCIA'] ?></small>
+                            <small><?= e($aluno['FREQUENCIA']) ?></small>
                         </td>
                         <td>
                             <div class="status">
@@ -170,11 +170,12 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
 
     </div>
 
-    <button id="btSair" 
-    onclick="window.location.href='logout.php'"
-    class="mb-5 mt-5 d-flex justify-content-center align-items-center">
-        <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
-        Sair
-    </button>
+    <form action="logout.php" method="POST">
+        <?= csrfCampo() ?>
+        <button id="btSair" type="submit" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+            <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
+            Sair
+        </button>
+    </form>
 
 </section>

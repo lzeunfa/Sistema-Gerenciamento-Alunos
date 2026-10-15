@@ -5,6 +5,7 @@ $listarModalidades = listarModalidades();
 $listarPLanos = listarPlano();
 $listarFrequencia = listarFrequencia();
 $listarStatus = listarStatus();
+$mensagem = pegarMensagem();
 ?>
 <div class="container_form">
     <!-- Cabeçalho -->
@@ -13,16 +14,21 @@ $listarStatus = listarStatus();
         <p>Preencha os dados abaixo para cadastrar um novo aluno na academia</p>
     </div>
 
+    <?php if ($mensagem): ?>
+        <div class="form-mensagem form-mensagem-<?= e($mensagem['tipo']) ?>" role="alert"><?= e($mensagem['texto']) ?></div>
+    <?php endif; ?>
+
     <!-- Formulário -->
     <div class="form-container">
         <form id="cadastroForm" method="POST" action="BACKEND/CONTROLLER/gravarAluno.php">
+            <?= csrfCampo() ?>
             <!-- Nome -->
             <div class="form-group">
                 <label class="form-label">
                     Nome Completo <span class="required">*</span>
                 </label>
                 <input type="text" class="form-input" name="nome" placeholder="Digite o nome completo do aluno"
-                    required>
+                    minlength="3" maxlength="100" required>
             </div>
 
             <div class="form-group">
@@ -30,14 +36,14 @@ $listarStatus = listarStatus();
                     Telefone <span class="required">*</span>
                 </label>
                 <input type="tel" id="telefone" class="form-input" name="telefone" placeholder="(99)99898-9898"
-                    required>
+                    maxlength="20" required>
             </div>
 
             <div class="form-group">
                 <label class="form-label">
                     E-mail <span class="required">*</span>
                 </label>
-                <input type="email" class="form-input" name="email" placeholder="Digite o email do aluno" required>
+                <input type="email" class="form-input" name="email" placeholder="Digite o email do aluno" maxlength="100" required>
             </div>
 
 
@@ -80,7 +86,7 @@ $listarStatus = listarStatus();
                 <label class="form-label">
                     CEP <span class="required">*</span>
                 </label>
-                <input type="text" class="form-input" name="cep" placeholder="Digite o cep do aluno" required>
+                <input type="text" class="form-input" name="cep" placeholder="Digite o cep do aluno" maxlength="9" required>
             </div>
 
             <!-- Endereço -->
@@ -88,7 +94,25 @@ $listarStatus = listarStatus();
                 <label class="form-label">
                     Endereço <span class="required">*</span>
                 </label>
-                <input type="text" class="form-input" name="endereco" placeholder="Digite o endereço do aluno" required>
+                <input type="text" class="form-input" name="endereco" placeholder="Digite o endereço do aluno" maxlength="150" required>
+            </div>
+
+            <!-- Responsável legal (LGPD art. 14: dados de criança e adolescente) -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        Nome do responsável <small>(obrigatório para menores de 18 anos)</small>
+                    </label>
+                    <input type="text" class="form-input" name="responsavel_nome" placeholder="Nome do pai, mãe ou responsável"
+                        maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        CPF do responsável <small>(obrigatório para menores de 18 anos)</small>
+                    </label>
+                    <input type="text" class="form-input" name="responsavel_cpf" placeholder="000.000.000-00" maxlength="14">
+                </div>
             </div>
 
             <!-- Modalidades -->
@@ -100,15 +124,15 @@ $listarStatus = listarStatus();
                 echo "<div class='checkbox-group'>";
 
                 foreach ($listarModalidades as $linha) {
-                    $idBanco = $linha['MODALIDADECOD'];
+                    $idBanco = e('mod' . $linha['MODALIDADECOD']);
 
                     echo "<div class='checkbox-option'>";
 
                     // O id do input recebe o ID do banco. O name continua com []
-                    echo "<input type='checkbox' id='" . $idBanco . "' name='modalidades[]' value='" . $idBanco . "'>";
+                    echo "<input type='checkbox' id='" . $idBanco . "' name='modalidades[]' value='" . e($linha['MODALIDADECOD']) . "'>";
 
                     // O 'for' da label recebe o mesmo ID para o clique funcionar
-                    echo "<label for='" . $idBanco . "'>" . $linha['NOMEMOD'] . "</label>";
+                    echo "<label for='" . $idBanco . "'>" . e($linha['NOMEMOD']) . "</label>";
 
                     echo "</div>";
                 }
@@ -129,42 +153,54 @@ $listarStatus = listarStatus();
                     //O programador que fez este código é burro, erra o nome da variável que ele mesmo criou.
                     foreach ($listarPLanos as $plano) {
                         $codPLano = $plano['PLANOCOD'];
-                        echo ("<option value=" . $codPLano . ">" . $plano['PLANO'] . "</option>");
+                        echo ("<option value='" . e($codPLano) . "'>" . e($plano['PLANO']) . "</option>");
                     }
                     ?>
                 </select>
             </div>
 
             <div class="form-group">
-                <lab el class="form-label">
+                <label class="form-label">
                     Frequência <span class="required">*</span>
-                    </label>
-                    <select class="form-select" name="frequencia-dias" required>
-                        <option value="">Selecione</option>
-                        <?php
-                        foreach ($listarFrequencia as $frequencia) {
-                            $codFrequencia = $frequencia['OPCAOCOD'];
-                            echo ("<option value=" . $codFrequencia . "> " . $frequencia['OPCAO'] . "</option>");
-                        }
-                        ?>
+                </label>
+                <select class="form-select" name="frequencia-dias" required>
+                    <option value="">Selecione</option>
+                    <?php
+                    foreach ($listarFrequencia as $frequencia) {
+                        $codFrequencia = $frequencia['OPCAOCOD'];
+                        echo ("<option value='" . e($codFrequencia) . "'>" . e($frequencia['OPCAO']) . "</option>");
+                    }
+                    ?>
 
-                    </select>
+                </select>
             </div>
 
             <div class="form-group">
-                <lab el class="form-label">
+                <label class="form-label">
                     Status <span class="required">*</span>
-                    </label>
-                    <select class="form-select" name="status" required>
-                        <option value="">Selecione</option>
-                        <?php
-                        foreach ($listarStatus as $status) {
-                            $codStatus = $status['STATUSCOD'];
-                            echo ("<option value=" . $codStatus . "> " . $status['STATUSALU'] . "</option>");
-                        }
-                        ?>
+                </label>
+                <select class="form-select" name="status" required>
+                    <option value="">Selecione</option>
+                    <?php
+                    foreach ($listarStatus as $status) {
+                        $codStatus = $status['STATUSCOD'];
+                        echo ("<option value='" . e($codStatus) . "'>" . e($status['STATUSALU']) . "</option>");
+                    }
+                    ?>
 
-                    </select>
+                </select>
+            </div>
+
+            <!-- Transparência (LGPD art. 9) -->
+            <div class="form-group">
+                <div class="checkbox-option">
+                    <input type="checkbox" id="ciencia_privacidade" name="ciencia_privacidade" value="1" required>
+                    <label for="ciencia_privacidade">
+                        O aluno (ou o responsável, se for menor de idade) foi informado sobre a
+                        <a href="privacidade.php" target="_blank" rel="noopener">Política de Privacidade</a>
+                        e, no caso de menor, o responsável autorizou o tratamento dos dados. <span class="required">*</span>
+                    </label>
+                </div>
             </div>
 
 
@@ -233,11 +269,13 @@ $listarStatus = listarStatus();
 
     </div>
 
-    <button id="btSair" onclick="window.location.href='logout.php'"
-        class="mb-5 mt-5 d-flex justify-content-center align-items-center">
-        <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida"
-            width="30px">
-        Sair
-    </button>
+    <form action="logout.php" method="POST">
+        <?= csrfCampo() ?>
+        <button id="btSair" type="submit" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+            <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida"
+                width="30px">
+            Sair
+        </button>
+    </form>
 
 </section>

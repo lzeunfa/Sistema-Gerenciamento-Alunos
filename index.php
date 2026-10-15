@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once(__DIR__ . '/BACKEND/SEGURANCA/seguranca.php');
 
 //ja logado vai direto para o sistema
 if (!empty($_SESSION['user_id'])) {
@@ -104,10 +104,11 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
                 </div>
 
                 <?php if ($mensagemErro): ?>
-                    <div class="login-error" role="alert"><?= htmlspecialchars($mensagemErro) ?></div>
+                    <div class="login-error" role="alert"><?= e($mensagemErro) ?></div>
                 <?php endif; ?>
 
                 <form action="BACKEND/CONTROLLER/actions.php" class="login-form" id="loginForm" method="POST">
+                    <?= csrfCampo() ?>
                     <div class="form-group">
                         <label for="inputUser" class="form-label">Usuário ou Email</label>
                         <div class="input-wrapper">
@@ -116,7 +117,7 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                             <input id="inputUser" name="inputUser" type="text" class="form-input"
-                                placeholder="Digite seu usuário ou email" required>
+                                placeholder="Digite seu usuário ou email" maxlength="100" autocomplete="username" required>
                         </div>
                     </div>
 
@@ -128,9 +129,9 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
                                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                             <input type="password" class="form-input" id="inputUserPass" name="inputUserPass"
-                                placeholder="Digite sua senha" required>
+                                placeholder="Digite sua senha" maxlength="128" autocomplete="current-password" required>
 
-                            <button type="button" class="password-toggle" onclick="togglePassword()"
+                            <button type="button" class="password-toggle" id="passwordToggle"
                                 aria-label="alternar entre mostrar ou não a senha">
                                 <svg id="eyeIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -146,6 +147,8 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
                         Entrar
                     </button>
                 </form>
+
+                <p class="login-privacy"><a href="privacidade.php">Política de Privacidade</a></p>
             </div>
         </div>
     </div>

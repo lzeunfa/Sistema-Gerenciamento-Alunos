@@ -1,0 +1,24 @@
+# Seguranca do servidor Apache para o sistema GKT.
+# (?i) = ignora maiusculas/minusculas, pois no Windows /db/ e /DB/ sao a mesma pasta.
+
+# Nao listar o conteudo das pastas
+Options -Indexes
+
+# Arquivos e pastas internos respondem 404, como se nao existissem:
+# .env, .git, .gitignore, .htaccess e qualquer outro arquivo oculto
+RedirectMatch 404 (?i)/\.
+# scripts de banco, documentacao, conexao e paginas que so devem rodar dentro do sistema.php
+RedirectMatch 404 (?i)/(DB|DOC|BACKEND/CONNECTION|BACKEND/SEGURANCA|ASSETS/PAGINAS)(/|$)
+RedirectMatch 404 (?i)/BACKEND/CONTROLLER/funcoes\.php$
+RedirectMatch 404 (?i)/trava\.php$
+# tipos de arquivo que nunca devem ser baixados
+RedirectMatch 404 (?i)\.(sql|md|ini|log|bak|env|sh|ps1)$
+
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "same-origin"
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    Header set Cross-Origin-Opener-Policy "same-origin"
+</IfModule>

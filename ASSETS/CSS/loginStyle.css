@@ -324,6 +324,16 @@
             font-weight: 600;
         }
 
+        .login-privacy {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .login-privacy a {
+            color: var(--text-light);
+        }
+
         .login-form {
             display: flex;
             flex-direction: column;

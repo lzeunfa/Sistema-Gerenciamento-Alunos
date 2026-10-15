@@ -107,9 +107,12 @@ $totalPendentes = contarAlunosCompletos('alunos_pendentes');
 
     </div>
 
-    <button id="btSair" onclick="window.location.href='logout.php'" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
-        <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
-        Sair
-    </button>
+    <form action="logout.php" method="POST">
+        <?= csrfCampo() ?>
+        <button id="btSair" type="submit" class="mb-5 mt-5 d-flex justify-content-center align-items-center">
+            <img class="me-3" src="ASSETS/IMGS/ICONES/iconeSair.png" alt="bonequinho correndo simbolizando saida" width="30px">
+            Sair
+        </button>
+    </form>
 
 </section>

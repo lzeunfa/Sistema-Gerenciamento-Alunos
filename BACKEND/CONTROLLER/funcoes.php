@@ -1,13 +1,15 @@
 <?php
 require_once(__DIR__ . '/../CONNECTION/config.php');
-function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep, $endereco, $modalidade, $plano_pagamento, $frequencia_dias, $status)
+function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep, $endereco, $modalidade, $plano_pagamento, $frequencia_dias, $status, $responsavelNome = '', $responsavelCpf = '')
 {
      try {
           $pdo = Database::getConexao();
           $pdo->beginTransaction();
           $sqlCadastroAluno = "INSERT INTO ALUNOS
-            (ALUMATRICULA,ALUNOME,ALUTELEFONE,ALUEMAIL,ALUCPF,ALUSEX,ALUDATANASC,ALUCEP,ALUENDERECO,ALUSTATUS)
-            VALUES(:ALUMATRICULA, :ALUNOME, :ALUTELEFONE, :ALUEMAIL, :ALUCPF, :ALUSEX, :ALUDATANASC, :ALUCEP, :ALUENDERECO,:ALUSTATUS)";
+            (ALUMATRICULA,ALUNOME,ALUTELEFONE,ALUEMAIL,ALUCPF,ALUSEX,ALUDATANASC,ALUCEP,ALUENDERECO,ALUSTATUS,ALURESPNOME,ALURESPCPF,ALUCIENCIAPRIVACIDADE)
+            VALUES(:ALUMATRICULA, :ALUNOME, :ALUTELEFONE, :ALUEMAIL, :ALUCPF, :ALUSEX, :ALUDATANASC, :ALUCEP, :ALUENDERECO,:ALUSTATUS,:ALURESPNOME,:ALURESPCPF,GETDATE())";
+          $responsavelNome = $responsavelNome !== '' ? $responsavelNome : null;
+          $responsavelCpf = $responsavelCpf !== '' ? $responsavelCpf : null;
           $stmt = $pdo->prepare($sqlCadastroAluno);
           $matricula_gerada = gerarProximaMatricula($pdo);
           $stmt->bindParam(':ALUMATRICULA', $matricula_gerada);
@@ -20,6 +22,8 @@ function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep
           $stmt->bindParam(':ALUCEP', $cep);
           $stmt->bindParam(':ALUENDERECO', $endereco);
           $stmt->bindParam(':ALUSTATUS', $status);
+          $stmt->bindParam(':ALURESPNOME', $responsavelNome);
+          $stmt->bindParam(':ALURESPCPF', $responsavelCpf);
           $resultado = $stmt->execute();
           
           if ($resultado) {
@@ -45,6 +49,7 @@ function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep
           if (isset($pdo) && $pdo->inTransaction()) {
                $pdo->rollBack();
           }
+          error_log("GKT erro ao cadastrar aluno: " . $error->getMessage());
           return false;
      }
 }

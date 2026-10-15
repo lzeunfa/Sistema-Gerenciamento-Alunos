@@ -1,0 +1,49 @@
+@charset "UTF-8";
+
+body {
+    margin: 0;
+    padding: 16px;
+    background: #f1f5f9;
+    color: #0f172a;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.6;
+}
+
+.politica {
+    max-width: 760px;
+    margin: 24px auto;
+    padding: 32px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.politica h1 {
+    margin-top: 0;
+    color: #1e3a8a;
+}
+
+.politica h2 {
+    margin-top: 28px;
+    font-size: 1.15rem;
+    color: #1e3a8a;
+}
+
+.atualizacao {
+    color: #64748b;
+}
+
+.voltar {
+    margin-top: 32px;
+}
+
+.politica a {
+    color: #1e3a8a;
+}
+
+@media (max-width: 600px) {
+    .politica {
+        margin: 0;
+        padding: 20px;
+    }
+}

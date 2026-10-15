@@ -1,4 +1,9 @@
 <?php
+//script de manutencao: so pode ser executado pelo terminal, nunca pelo navegador
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
 require_once(__DIR__ . '/../BACKEND/CONNECTION/config.php');
 
 try {
