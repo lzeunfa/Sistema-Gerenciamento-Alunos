@@ -70,3 +70,15 @@ contra um hash falso para o tempo de resposta não revelar quem existe.
 **Decisão:** `gkt_app` só tem `db_datareader`/`db_datawriter`, com `DENY ALTER` e sem `UPDATE`/`DELETE` em `AUDITORIA`.
 **Consequências:** migrações rodam com outro usuário (autenticação do Windows). Ao criar tabela nova, as permissões
 vêm automaticamente das roles.
+
+## D-009 — "Excluir" aluno anonimiza em vez de apagar
+**Data:** 2026-10-14 · **Situação:** Aceita
+**Contexto:** a LGPD (art. 16, IV e 18, VI) pede a eliminação dos dados pessoais, mas a academia quer manter
+estatísticas de matrículas e modalidades, e `ALUNOS_INSCRICAO` depende da matrícula.
+**Decisão:** o botão Excluir e a rotina `DB/anonimizar_antigos.php` sobrescrevem os dados pessoais (`anonimizarAluno()`):
+nome `ANONIMIZADO`, CPF `X` + código interno, e-mail/telefone/endereço com um código aleatório, CEP e responsável
+apagados, nascimento reduzido a 1º de janeiro do mesmo ano. Matrícula, sexo e inscrições ficam. A data entra em
+`ALUANONIMIZADO`; a contagem dos 5 anos de guarda usa `ALUDATAINATIVACAO`, gravada quando a situação vira `INATIVO`.
+**Consequências:** não dá para desfazer (exporte antes, se o aluno pedir cópia). Aluno anonimizado não pode ser
+editado nem exportado. A `AUDITORIA` guarda só a matrícula, então não reidentifica ninguém. Os valores novos são
+únicos porque CPF e e-mail têm `UNIQUE` no banco.

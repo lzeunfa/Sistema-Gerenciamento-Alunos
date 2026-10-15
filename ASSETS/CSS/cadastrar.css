@@ -283,3 +283,31 @@
 .form-container {
     animation: slideIn 0.5s ease forwards;
 }
+/* Edição / exclusão de aluno (direitos do titular, LGPD art. 18) */
+a.btn {
+    text-decoration: none;
+    justify-content: center;
+}
+
+.btn-perigo {
+    background: #dc2626;
+    color: white;
+    border: 2px solid #dc2626;
+}
+
+.btn-perigo:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    color: white;
+}
+
+.acoes-titular {
+    border-top: none;
+    margin-top: 20px;
+    padding-top: 0;
+    flex-wrap: wrap;
+}
+
+.acoes-titular form {
+    margin: 0;
+}

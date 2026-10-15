@@ -128,7 +128,7 @@ function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
      } else {
           switch ($filtro) {
                case 'alunos_pendentes':
-                    $clausulaWhere = " WHERE S.STATUSALU != 'PAGO' ";
+                    $clausulaWhere = " WHERE S.STATUSALU = 'PENDENTE' ";
                     break;
                case 'alunos_pagos':
                     $clausulaWhere = " WHERE S.STATUSALU = 'PAGO' ";
@@ -160,7 +160,8 @@ function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
                  STRING_AGG(M.NOMEMOD, ', ') AS ARTES, 
                  P.PLANO, 
                  O.OPCAO AS FREQUENCIA,
-                 S.STATUSALU AS SITUACAO
+                 S.STATUSALU AS SITUACAO,
+                 A.ALUANONIMIZADO
                           FROM ALUNOS A
              INNER JOIN ALUNOS_INSCRICAO I ON A.ALUMATRICULA = I.ALUNOMAT
              INNER JOIN MODALIDADES M ON I.ALUNOMOD = M.MODALIDADECOD
@@ -171,7 +172,7 @@ function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
              $clausulaWhere 
              
              GROUP BY 
-                 A.ALUMATRICULA, A.DATACADASTRO, A.ALUNOME, A.ALUCPF, P.PLANO, O.OPCAO, S.STATUSALU
+                 A.ALUMATRICULA, A.DATACADASTRO, A.ALUNOME, A.ALUCPF, P.PLANO, O.OPCAO, S.STATUSALU, A.ALUANONIMIZADO
              ORDER BY A.ALUMATRICULA DESC";
 
      if ($limite !== null && $offset !== null) {
@@ -202,7 +203,7 @@ function contarAlunosCompletos($filtro = "")
      } else {
           switch ($filtro) {
                case 'alunos_pendentes':
-                    $clausulaWhere = " WHERE S.STATUSALU != 'PAGO' ";
+                    $clausulaWhere = " WHERE S.STATUSALU = 'PENDENTE' ";
                     break;
                case 'alunos_pagos':
                     $clausulaWhere = " WHERE S.STATUSALU = 'PAGO' ";
@@ -239,5 +240,281 @@ function contarAlunosCompletos($filtro = "")
      $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
      
      return $resultado ? (int)$resultado['total'] : 0;
+}
+// ---------- Validacao dos dados do aluno (cadastro e edicao usam as mesmas regras) ----------
+
+//le um campo de texto do POST; arrays e outros tipos viram texto vazio
+function campo(string $nome): string
+{
+     $valor = $_POST[$nome] ?? '';
+     return is_string($valor) ? trim($valor) : '';
+}
+
+function soDigitos(string $valor): string
+{
+     return preg_replace('/\D/', '', $valor);
+}
+
+function cpfValido(string $cpf): bool
+{
+     if (strlen($cpf) !== 11 || preg_match('/^(\d)\1{10}$/', $cpf)) {
+          return false;
+     }
+     for ($t = 9; $t < 11; $t++) {
+          $soma = 0;
+          for ($i = 0; $i < $t; $i++) {
+               $soma += (int) $cpf[$i] * (($t + 1) - $i);
+          }
+          if ((int) $cpf[$t] !== ((10 * $soma) % 11) % 10) {
+               return false;
+          }
+     }
+     return true;
+}
+
+function idsInteiros($valores): array
+{
+     if (!is_array($valores)) {
+          return [];
+     }
+     $ids = [];
+     foreach ($valores as $valor) {
+          if (is_string($valor) && ctype_digit($valor)) {
+               $ids[] = (int) $valor;
+          }
+     }
+     return array_values(array_unique($ids));
+}
+
+//matricula vem da URL ou do POST: so letras, numeros e hifen
+function matriculaValida($matricula): ?string
+{
+     return is_string($matricula) && preg_match('/^[0-9A-Za-z-]{1,20}$/', $matricula) ? $matricula : null;
+}
+
+//le e valida os dados do formulario de aluno; devolve [dados, lista de campos com erro]
+function lerAlunoDoPost(): array
+{
+     $aluno = [
+          'nome' => mb_strtoupper(campo('nome')),
+          'telefone' => soDigitos(campo('telefone')),
+          'email' => mb_strtolower(campo('email')),
+          'cpf' => soDigitos(campo('cpf')),
+          'dataNasc' => campo('data_nascimento'),
+          'genero' => substr(strtoupper(campo('genero')), 0, 1),
+          'cep' => soDigitos(campo('cep')),
+          'endereco' => campo('endereco'),
+          'responsavelNome' => mb_strtoupper(campo('responsavel_nome')),
+          'responsavelCpf' => soDigitos(campo('responsavel_cpf')),
+          'modalidades' => idsInteiros($_POST['modalidades'] ?? []),
+          'plano' => ctype_digit(campo('plano-pagamento')) ? (int) campo('plano-pagamento') : 0,
+          'frequencia' => ctype_digit(campo('frequencia-dias')) ? (int) campo('frequencia-dias') : 0,
+          'status' => ctype_digit(campo('status')) ? (int) campo('status') : 0,
+     ];
+
+     $nascimento = DateTime::createFromFormat('!Y-m-d', $aluno['dataNasc']);
+     $idade = $nascimento ? $nascimento->diff(new DateTime('today'))->y : -1;
+
+     $erros = [];
+     if (mb_strlen($aluno['nome']) < 3 || mb_strlen($aluno['nome']) > 100) $erros[] = "nome";
+     if (strlen($aluno['telefone']) < 10 || strlen($aluno['telefone']) > 11) $erros[] = "telefone";
+     if (!filter_var($aluno['email'], FILTER_VALIDATE_EMAIL) || strlen($aluno['email']) > 100) $erros[] = "e-mail";
+     if (!cpfValido($aluno['cpf'])) $erros[] = "CPF";
+     if (!$nascimento || $nascimento->format('Y-m-d') !== $aluno['dataNasc'] || $nascimento > new DateTime('today') || $idade > 120) $erros[] = "data de nascimento";
+     if (!in_array($aluno['genero'], ['M', 'F'], true)) $erros[] = "gênero";
+     if (strlen($aluno['cep']) !== 8) $erros[] = "CEP";
+     if ($aluno['endereco'] === '' || mb_strlen($aluno['endereco']) > 150) $erros[] = "endereço";
+     if (empty($aluno['modalidades'])) $erros[] = "modalidade";
+     if ($aluno['plano'] <= 0) $erros[] = "plano";
+     if ($aluno['frequencia'] <= 0) $erros[] = "frequência";
+     if ($aluno['status'] <= 0) $erros[] = "status";
+
+     //LGPD art. 14: menor de idade precisa de responsavel identificado
+     if ($idade >= 0 && $idade < 18) {
+          if (mb_strlen($aluno['responsavelNome']) < 3 || mb_strlen($aluno['responsavelNome']) > 100) $erros[] = "nome do responsável";
+          if (!cpfValido($aluno['responsavelCpf'])) $erros[] = "CPF do responsável";
+     } else {
+          //adulto: nao guardar dados de responsavel sem necessidade (minimizacao)
+          $aluno['responsavelNome'] = '';
+          $aluno['responsavelCpf'] = '';
+     }
+
+     return [$aluno, $erros];
+}
+
+// ---------- Direitos do titular (LGPD art. 18) ----------
+
+function buscarAluno(string $matricula): ?array
+{
+     $pdo = Database::getConexao();
+     $stmt = $pdo->prepare("SELECT A.*, S.STATUSALU FROM ALUNOS A
+          LEFT JOIN ALUNOS_STATUS S ON A.ALUSTATUS = S.STATUSCOD
+          WHERE A.ALUMATRICULA = :matricula");
+     $stmt->execute([':matricula' => $matricula]);
+     $aluno = $stmt->fetch(PDO::FETCH_ASSOC);
+     return $aluno ?: null;
+}
+
+function buscarInscricoes(string $matricula): array
+{
+     $pdo = Database::getConexao();
+     $stmt = $pdo->prepare("SELECT I.INSCRICAOCOD, I.ALUNOMOD, M.NOMEMOD, I.ALUNOPLANO, P.PLANO, I.ALUNOOPCAO, O.OPCAO, I.DATACADASTRO
+          FROM ALUNOS_INSCRICAO I
+          LEFT JOIN MODALIDADES M ON I.ALUNOMOD = M.MODALIDADECOD
+          LEFT JOIN PLANOS P ON I.ALUNOPLANO = P.PLANOCOD
+          LEFT JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD
+          WHERE I.ALUNOMAT = :matricula
+          ORDER BY I.INSCRICAOCOD");
+     $stmt->execute([':matricula' => $matricula]);
+     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+//codigo da situacao INATIVO (criada por DB/migracao_direitos_titular.sql)
+function codigoStatusInativo(): ?int
+{
+     $pdo = Database::getConexao();
+     $codigo = $pdo->query("SELECT TOP 1 STATUSCOD FROM ALUNOS_STATUS WHERE STATUSALU = 'INATIVO'")->fetchColumn();
+     return $codigo === false ? null : (int) $codigo;
+}
+
+//devolve 'ok', 'duplicado' (CPF ou e-mail de outro aluno) ou 'erro'
+function atualizarAluno(string $matricula, array $aluno, bool $registrarCiencia): string
+{
+     try {
+          $pdo = Database::getConexao();
+          $pdo->beginTransaction();
+
+          //a data de inativacao marca o inicio dos 5 anos de guarda (DB/anonimizar_antigos.php)
+          $stmt = $pdo->prepare("UPDATE ALUNOS SET
+                    ALUNOME = :nome, ALUTELEFONE = :telefone, ALUEMAIL = :email, ALUCPF = :cpf, ALUSEX = :sexo,
+                    ALUDATANASC = :nascimento, ALUCEP = :cep, ALUENDERECO = :endereco, ALUSTATUS = :status,
+                    ALURESPNOME = :respnome, ALURESPCPF = :respcpf,
+                    ALUDATAINATIVACAO = CASE WHEN :status_novo = :inativo THEN ISNULL(ALUDATAINATIVACAO, GETDATE()) ELSE NULL END,
+                    ALUCIENCIAPRIVACIDADE = CASE WHEN :ciencia = 1 THEN ISNULL(ALUCIENCIAPRIVACIDADE, GETDATE()) ELSE ALUCIENCIAPRIVACIDADE END
+               WHERE ALUMATRICULA = :matricula AND ALUANONIMIZADO IS NULL");
+          $stmt->execute([
+               ':nome' => $aluno['nome'],
+               ':telefone' => $aluno['telefone'],
+               ':email' => $aluno['email'],
+               ':cpf' => $aluno['cpf'],
+               ':sexo' => $aluno['genero'],
+               ':nascimento' => $aluno['dataNasc'],
+               ':cep' => $aluno['cep'],
+               ':endereco' => $aluno['endereco'],
+               ':status' => $aluno['status'],
+               ':respnome' => $aluno['responsavelNome'] !== '' ? $aluno['responsavelNome'] : null,
+               ':respcpf' => $aluno['responsavelCpf'] !== '' ? $aluno['responsavelCpf'] : null,
+               ':status_novo' => $aluno['status'],
+               ':inativo' => codigoStatusInativo() ?? -1,
+               ':ciencia' => $registrarCiencia ? 1 : 0,
+               ':matricula' => $matricula,
+          ]);
+          if ($stmt->rowCount() !== 1) {
+               $pdo->rollBack();
+               return 'erro';
+          }
+
+          //inscricoes: remove as modalidades desmarcadas, atualiza plano/frequencia e inclui as novas
+          $marcadores = [];
+          $parametros = [':matricula' => $matricula];
+          foreach ($aluno['modalidades'] as $i => $mod) {
+               $marcadores[] = ":mod$i";
+               $parametros[":mod$i"] = $mod;
+          }
+          $stmt = $pdo->prepare("DELETE FROM ALUNOS_INSCRICAO WHERE ALUNOMAT = :matricula AND ALUNOMOD NOT IN (" . implode(',', $marcadores) . ")");
+          $stmt->execute($parametros);
+
+          $stmt = $pdo->prepare("UPDATE ALUNOS_INSCRICAO SET ALUNOPLANO = :plano, ALUNOOPCAO = :opcao WHERE ALUNOMAT = :matricula");
+          $stmt->execute([':plano' => $aluno['plano'], ':opcao' => $aluno['frequencia'], ':matricula' => $matricula]);
+
+          $existentes = array_map('intval', array_column(buscarInscricoes($matricula), 'ALUNOMOD'));
+          $stmt = $pdo->prepare("INSERT INTO ALUNOS_INSCRICAO(ALUNOMAT,ALUNOMOD,ALUNOPLANO,ALUNOOPCAO) VALUES(:matricula,:mod,:plano,:opcao)");
+          foreach (array_diff($aluno['modalidades'], $existentes) as $mod) {
+               $stmt->execute([':matricula' => $matricula, ':mod' => $mod, ':plano' => $aluno['plano'], ':opcao' => $aluno['frequencia']]);
+          }
+
+          $pdo->commit();
+          return 'ok';
+     } catch (PDOException $error) {
+          if (isset($pdo) && $pdo->inTransaction()) {
+               $pdo->rollBack();
+          }
+          if ($error->getCode() === '23000') {
+               return 'duplicado';
+          }
+          error_log("GKT erro ao atualizar aluno: " . $error->getMessage());
+          return 'erro';
+     }
+}
+
+//dados completos do aluno para o proprio titular (acesso e portabilidade, art. 18, II e V)
+function dadosExportacaoAluno(string $matricula): ?array
+{
+     $aluno = buscarAluno($matricula);
+     if (!$aluno) {
+          return null;
+     }
+     $inscricoes = array_map(fn($i) => [
+          'modalidade' => $i['NOMEMOD'],
+          'plano' => $i['PLANO'],
+          'frequencia' => $i['OPCAO'],
+          'data_inscricao' => $i['DATACADASTRO'],
+     ], buscarInscricoes($matricula));
+
+     return [
+          'controlador' => 'Academia GKT Artes Marciais',
+          'gerado_em' => date('c'),
+          'base_legal' => 'LGPD (Lei 13.709/2018), art. 18, II (acesso) e V (portabilidade)',
+          'aluno' => [
+               'matricula' => $aluno['ALUMATRICULA'],
+               'nome' => $aluno['ALUNOME'],
+               'cpf' => $aluno['ALUCPF'],
+               'data_nascimento' => $aluno['ALUDATANASC'],
+               'sexo' => $aluno['ALUSEX'],
+               'telefone' => $aluno['ALUTELEFONE'],
+               'email' => $aluno['ALUEMAIL'],
+               'cep' => $aluno['ALUCEP'],
+               'endereco' => $aluno['ALUENDERECO'],
+               'situacao' => $aluno['STATUSALU'],
+               'data_cadastro' => $aluno['DATACADASTRO'],
+               'data_inativacao' => $aluno['ALUDATAINATIVACAO'] ?? null,
+               'ciencia_politica_privacidade' => $aluno['ALUCIENCIAPRIVACIDADE'],
+               'responsavel_legal' => $aluno['ALURESPNOME'] === null ? null : [
+                    'nome' => $aluno['ALURESPNOME'],
+                    'cpf' => $aluno['ALURESPCPF'],
+               ],
+          ],
+          'inscricoes' => $inscricoes,
+     ];
+}
+
+//elimina os dados pessoais (art. 16 e 18, IV/VI) sem apagar matricula e inscricoes, que ficam para estatistica.
+//Os valores novos sao unicos (CPF e e-mail tem UNIQUE no banco) mas nao dizem nada sobre a pessoa.
+function anonimizarAluno(string $matricula): bool
+{
+     $pdo = Database::getConexao();
+     $token = bin2hex(random_bytes(8));
+     $stmt = $pdo->prepare("UPDATE ALUNOS SET
+               ALUNOME = 'ANONIMIZADO',
+               ALUCPF = 'X' + RIGHT('0000000000' + CAST(ALUCOD AS varchar(10)), 10),
+               ALUEMAIL = :email,
+               ALUTELEFONE = :telefone,
+               ALUENDERECO = :endereco,
+               ALUCEP = NULL,
+               ALURESPNOME = NULL,
+               ALURESPCPF = NULL,
+               ALUDATANASC = DATEFROMPARTS(YEAR(ALUDATANASC), 1, 1),
+               ALUSTATUS = COALESCE(:inativo, ALUSTATUS),
+               ALUDATAINATIVACAO = ISNULL(ALUDATAINATIVACAO, GETDATE()),
+               ALUANONIMIZADO = GETDATE()
+          WHERE ALUMATRICULA = :matricula AND ALUANONIMIZADO IS NULL");
+     $stmt->execute([
+          ':email' => "anon-$token@anonimizado.invalid",
+          ':telefone' => "X$token",
+          ':endereco' => "ANONIMIZADO-$token",
+          ':inativo' => codigoStatusInativo(),
+          ':matricula' => $matricula,
+     ]);
+     return $stmt->rowCount() === 1;
 }
 ?>

@@ -2,7 +2,7 @@
 require_once(__DIR__ . '/trava.php');
 
 $pagina =isset($_GET['pagina']) ? strtoupper($_GET['pagina']) : 'DASHBOARD';
-$paginas_permitidas = ['DASHBOARD', 'ALUNOS', 'CADASTRAR', 'TURMAS'];
+$paginas_permitidas = ['DASHBOARD', 'ALUNOS', 'CADASTRAR', 'TURMAS', 'EDITAR', 'EXCLUIR'];
 
 if (!in_array($pagina, $paginas_permitidas)) {
     $pagina = 'DASHBOARD';
