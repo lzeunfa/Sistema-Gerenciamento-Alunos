@@ -31,6 +31,12 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - `CLAUDE.md` com as regras do projeto para IA e equipe, `.env.example`, `DOC/DECISOES.md`, modelo de PR e skill `/revisar-pr`.
 - CI no GitHub Actions: checagem de sintaxe PHP, análise estática (PHPStan), busca de senhas vazadas e auditoria de dependências.
 
+### Alterado
+- Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.
+
+### Banco
+- Rodar de novo `DB/dados_iniciais.sql` (não duplica dados).
+
 ## [1.1.0] - 2026-10-14
 
 ### Segurança

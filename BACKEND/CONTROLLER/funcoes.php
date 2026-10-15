@@ -89,7 +89,7 @@ function listarPlano()
 function listarFrequencia()
 {
      $pdo = Database::getConexao();
-     $sql = "SELECT OPCAOCOD,OPCAO FROM OPCAOSEMANA";
+     $sql = "SELECT OPCAOCOD,OPCAO FROM OPCAOSEMANA ORDER BY OPCAO";
      $stmt = $pdo->prepare($sql);
      $stmt->execute();
      $frequencia = $stmt->fetchAll(PDO::FETCH_ASSOC);
