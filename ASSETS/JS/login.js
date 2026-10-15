@@ -1,6 +1,6 @@
 // Password toggle
 function togglePassword() {
-    const passwordInput = document.getElementById('passwordInput');
+    const passwordInput = document.getElementById('inputUserPass');
     const eyeIcon = document.getElementById('eyeIcon');
     
     if (passwordInput.type === 'password') {

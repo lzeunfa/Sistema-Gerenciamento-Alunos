@@ -313,6 +313,17 @@
             font-weight: 400;
         }
 
+        .login-error {
+            margin: -30px 0 24px;
+            padding: 12px 16px;
+            border-left: 4px solid var(--primary-red);
+            border-radius: 6px;
+            background: #fef2f2;
+            color: var(--primary-red);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
         .login-form {
             display: flex;
             flex-direction: column;

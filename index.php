@@ -1,3 +1,18 @@
+<?php
+session_start();
+
+//ja logado vai direto para o sistema
+if (!empty($_SESSION['user_id'])) {
+    header('Location: sistema.php');
+    exit();
+}
+
+$mensagemErro = $_SESSION['login_error'] ?? '';
+unset($_SESSION['login_error']);
+if (($_GET['erro'] ?? '') === 'sessao_expirada') {
+    $mensagemErro = "Sua sessão expirou. Entre novamente.";
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -87,6 +102,10 @@
                     <h1 class="form-title">Bem-vindo</h1>
                     <p class="form-subtitle">Entre com suas credenciais para acessar o sistema</p>
                 </div>
+
+                <?php if ($mensagemErro): ?>
+                    <div class="login-error" role="alert"><?= htmlspecialchars($mensagemErro) ?></div>
+                <?php endif; ?>
 
                 <form action="BACKEND/CONTROLLER/actions.php" class="login-form" id="loginForm" method="POST">
                     <div class="form-group">

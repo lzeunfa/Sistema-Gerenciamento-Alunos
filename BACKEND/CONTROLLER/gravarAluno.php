@@ -1,4 +1,5 @@
 <?php
+require_once(__DIR__ . '/../../trava.php');
 require_once("../CONNECTION/config.php");
 require_once("../CONTROLLER/funcoes.php");
 $pdo = Database::getConexao();
