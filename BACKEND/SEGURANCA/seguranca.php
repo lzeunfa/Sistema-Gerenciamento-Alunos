@@ -115,13 +115,23 @@ function csrfCampo(): string
 }
 
 //encerra a requisicao se nao for POST com token valido
-function exigirPostComCsrf(): void
+//endereco da raiz do sistema no site (ex.: /Gkt/Sistema-Gerenciamento-Alunos), funciona de qualquer pasta
+function urlRaizProjeto(): string
+{
+    $raiz = realpath(__DIR__ . '/../..');
+    return str_replace('\\', '/', substr($raiz, strlen(realpath($_SERVER['DOCUMENT_ROOT']))));
+}
+
+//encerra a requisicao se nao for POST com token valido.
+//Token invalido quase sempre e pagina aberta ha muito tempo (a sessao expirou): por isso, em vez de parar
+//numa pagina de erro, volta para $voltarPara (ou para o inicio) com uma mensagem explicando.
+function exigirPostComCsrf(string $voltarPara = ''): void
 {
     $token = $_POST['csrf_token'] ?? '';
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($token) || !hash_equals(csrfToken(), $token)) {
         registrarAuditoria('csrf_invalido', $_SERVER['REQUEST_URI'] ?? '');
-        http_response_code(403);
-        echo "Requisição inválida. Volte e tente novamente.";
+        definirMensagem('erro', "A página ficou aberta por muito tempo ou foi aberta em outra aba. Tente novamente.");
+        header('Location: ' . ($voltarPara !== '' ? $voltarPara : urlRaizProjeto() . '/index.php'));
         exit;
     }
 }

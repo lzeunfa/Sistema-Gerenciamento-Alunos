@@ -1,6 +1,6 @@
 <?php
 require_once(__DIR__ . '/../SEGURANCA/seguranca.php');
-exigirPostComCsrf();
+exigirPostComCsrf('../../index.php');
 
 $userName = trim($_POST['inputUser'] ?? '');
 $userPass = $_POST['inputUserPass'] ?? '';

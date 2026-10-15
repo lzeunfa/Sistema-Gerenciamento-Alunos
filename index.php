@@ -7,7 +7,7 @@ if (!empty($_SESSION['user_id'])) {
     exit();
 }
 
-$mensagemErro = $_SESSION['login_error'] ?? '';
+$mensagemErro = $_SESSION['login_error'] ?? (pegarMensagem()['texto'] ?? '');
 unset($_SESSION['login_error']);
 if (($_GET['erro'] ?? '') === 'sessao_expirada') {
     $mensagemErro = "Sua sessão expirou. Entre novamente.";
