@@ -33,7 +33,7 @@ O Apache agora só atende `127.0.0.1` (o próprio computador). Para acessar de o
 
 ## 2. Como aplicar em outra máquina (equipe)
 
-1. Rodar no banco, nesta ordem: `DB/migracao_login.sql` e `DB/migracao_seguranca.sql`.
+1. Rodar no banco, nesta ordem: `DB/migracao_login.sql`, `DB/migracao_seguranca.sql` e `DB/migracao_direitos_titular.sql`.
 2. Executar os comandos de PERMISSÕES do fim de `migracao_seguranca.sql` (ajustando o nome do usuário do banco).
 3. Criar o administrador: `C:\xampp\php\php.exe DB/criar_admin.php <login>` (a senha é pedida no terminal, mínimo 12 caracteres).
 4. Conferir que `http://localhost/.../.env` responde 404.
@@ -49,8 +49,10 @@ O Apache agora só atende `127.0.0.1` (o próprio computador). Para acessar de o
 | Segurança | 46, 47, 49 | Itens da seção 1 |
 | Registro das operações | 37 | Seção 4 abaixo + tabela `AUDITORIA` |
 | Canal com o titular / encarregado | 41 | Pequeno porte pode dispensar o encarregado, mas **precisa de um canal** **[ACADEMIA: definir e-mail/telefone]** |
-| Direitos do titular (acesso, correção, eliminação, portabilidade) | 18 | **Pendente no sistema**: os botões Editar/Excluir ainda não funcionam. Até lá, atender pelo banco em até 15 dias (art. 19) |
-| Prazo de guarda e eliminação | 15, 16 | Política define 5 anos após o fim da matrícula. **Pendente**: rotina de anonimização automática |
+| Direitos do titular — acesso e portabilidade | 18, II e V | Botão **Exportar** (listas de Alunos/Turmas e tela de edição) baixa um JSON com todos os dados e inscrições do aluno. Prazo de resposta: 15 dias (art. 19) |
+| Direitos do titular — correção | 18, III | Botão **Editar**: mesmas validações do cadastro; responsável legal obrigatório para menores e descartado para adultos |
+| Direitos do titular — eliminação | 18, IV e VI; 16 | Botão **Excluir** com tela de confirmação: **anonimiza** (nome `ANONIMIZADO`; CPF, e-mail, telefone e endereço trocados por valores únicos sem significado; CEP e responsável apagados; nascimento reduzido ao ano). Matrícula, sexo e inscrições ficam para estatística. Não pode ser desfeito |
+| Prazo de guarda e eliminação | 15, 16 | Política define 5 anos após o fim da matrícula. Situação `INATIVO` grava `ALUDATAINATIVACAO`; `DB/anonimizar_antigos.php --executar` anonimiza quem está inativo há mais de 5 anos. **[ACADEMIA: agendar no Agendador de Tarefas, 1x por mês]** |
 | Comunicação de incidentes | 48 | Seção 5 abaixo |
 | Disponibilidade (backup) | 46 | `DB/backup.ps1` (com verificação). **[ACADEMIA: agendar e guardar cópia fora do PC]** |
 
@@ -63,6 +65,8 @@ O Apache agora só atende `127.0.0.1` (o próprio computador). Para acessar de o
 | Cobrança | plano, situação de pagamento | Alunos | Contrato / fiscal | Art. 7º, V e II | Administradores | 5 anos |
 | Login de administradores | login, e-mail, senha (hash), IP | Funcionários | Segurança | Art. 7º, IX | Sistema | Enquanto ativo |
 | Auditoria | matrícula/login, ação, IP, data | Funcionários | Segurança e prestação de contas | Art. 7º, IX | Administradores | 5 anos (Res. 15/2024) |
+| Exportação a pedido do titular | todos os dados do aluno | Alunos e responsáveis | Atender acesso/portabilidade | Art. 18 | Administradores (arquivo entregue ao titular) | Não fica cópia no sistema |
+| Dados anonimizados | matrícula, sexo, ano de nascimento, inscrições | Ex-alunos (não identificáveis) | Estatística | Art. 12 e 16, IV | Administradores | Indeterminado |
 
 ## 5. Se houver um incidente (vazamento, acesso indevido, perda de dados)
 
@@ -81,5 +85,4 @@ O Apache agora só atende `127.0.0.1` (o próprio computador). Para acessar de o
 - **Criptografar o disco** (BitLocker) do computador do banco e dos backups.
 - **`DB/script.sql` no GitHub público** contém nome, CPF, e-mail e telefone de um aluno de exemplo. Se for pessoa
   real, remover o arquivo e limpar o histórico do repositório (ou tornar o repositório privado).
-- Implementar **Editar/Excluir/Exportar aluno** para atender o art. 18 diretamente pelo sistema.
 - Treinar quem usa o sistema: não compartilhar senha, sair ao terminar, desconfiar de links.

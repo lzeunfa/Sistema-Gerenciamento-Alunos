@@ -262,3 +262,26 @@ tbody td:nth-child(2) {
         padding: 4px 10px;
     }
 }
+/* Botões de ação que são link ou formulário (Editar, Exportar, Excluir) */
+a.btn-acao {
+    text-decoration: none;
+}
+
+.form-acao {
+    margin: 0;
+    display: inline-flex;
+}
+
+.btn-export {
+    color: #64748b;
+}
+
+.btn-export:hover {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.anonimizado {
+    color: #94a3b8;
+    font-style: italic;
+}

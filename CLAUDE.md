@@ -31,6 +31,10 @@ composer analise
 # aplicar migrações no banco local
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_login.sql
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_seguranca.sql
+sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_direitos_titular.sql
+
+# retenção de 5 anos: sem parâmetro só simula; com --executar anonimiza os inativos há mais de 5 anos
+C:\xampp\php\php.exe DB/anonimizar_antigos.php --executar
 
 # criar/trocar senha de administrador (senha pedida no terminal)
 C:\xampp\php\php.exe DB/criar_admin.php <login>
@@ -49,7 +53,7 @@ Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAM
 - Todo formulário que altera algo: `method="POST"` + `<?= csrfCampo() ?>`; o destino chama `exigirPostComCsrf()` antes de qualquer outra coisa.
 - SQL só com `prepare()` e parâmetros nomeados. Nunca concatene entrada do usuário em SQL; filtros dinâmicos usam lista fixa (whitelist), como em `listarAlunosCompletos()`.
 - Sem JavaScript inline (`onclick=`, `<script>` sem `src`): a CSP bloqueia. Use arquivo em `ASSETS/JS/` com `addEventListener`.
-- Validação sempre no servidor (o `required` do HTML é só conforto). Use os padrões de `gravarAluno.php`: `campo()`, `soDigitos()`, `cpfValido()`, `idsInteiros()`.
+- Validação sempre no servidor (o `required` do HTML é só conforto). Use as funções de `funcoes.php`: `campo()`, `soDigitos()`, `cpfValido()`, `idsInteiros()`, `matriculaValida()` e `lerAlunoDoPost()` (regras do aluno, compartilhadas por cadastro e edição).
 - Senhas: `gerarHashSenha()` / `password_verify()`; política em `problemaNaSenha()`. Nunca guarde ou registre senha em texto.
 - Erros: nunca `echo` de exceção para o usuário. Use `error_log()` e mensagem genérica.
 - Arquivo novo que não deve ser acessado pelo navegador? Coloque em `DB/`, `DOC/`, `BACKEND/CONNECTION/`, `BACKEND/SEGURANCA/` ou `ASSETS/PAGINAS/` (bloqueados no `.htaccess`) ou acrescente uma regra lá. Scripts de manutenção começam com `if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }`.
