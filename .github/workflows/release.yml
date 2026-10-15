@@ -1,0 +1,46 @@
+# Release: cria uma Release no GitHub quando uma tag de versao e enviada.
+#
+# Como publicar uma versao:
+#   1. No CHANGELOG.md, renomeie "## [Nao publicado]" para "## [1.2.0] - AAAA-MM-DD" e crie um novo [Nao publicado] vazio.
+#   2. Commit e push.
+#   3. git tag v1.2.0 && git push origin v1.2.0
+# O texto da Release e a secao dessa versao no CHANGELOG.md. Sem secao no CHANGELOG, o job falha de proposito.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag ja existente (ex.: v1.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publicar release
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - name: Extrair a secao da versao do CHANGELOG.md
+        run: |
+          versao="${TAG#v}"
+          # imprime da linha "## [versao]" ate o proximo "## [" ou ate os links do rodape ("[x]: https://...")
+          awk -v v="$versao" '/^## \[/{ p = index($0, "[" v "]") > 0; next } /^\[[^]]+\]: /{ p = 0 } p' CHANGELOG.md > notas.md
+          if [ ! -s notas.md ]; then
+            echo "::error::CHANGELOG.md nao tem a secao [$versao]."
+            exit 1
+          fi
+          cat notas.md
+      - name: Criar a Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$TAG" --title "$TAG" --notes-file notas.md --verify-tag

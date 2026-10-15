@@ -1,0 +1,11 @@
+# Analise estatica do PHP (rodar: composer analise). O CI falha se aparecer erro.
+# Para subir o rigor: aumente "level" (0 a 10), corrija os erros novos e faca commit junto.
+# Nivel 1 hoje acusa "variavel pode nao existir" nas paginas de ASSETS/PAGINAS, que usam variaveis
+# definidas no sistema.php. Proximo passo: declarar essas variaveis com @var no topo de cada pagina.
+parameters:
+    level: 0
+    phpVersion: 80200
+    paths:
+        - .
+    excludePaths:
+        - vendor

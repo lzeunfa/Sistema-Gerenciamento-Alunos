@@ -1,0 +1,87 @@
+# CI: roda a cada push e Pull Request. Se algum passo falhar, o PR nao deve ser mergeado.
+#
+# Como manter este arquivo:
+#   - Cada job verifica UMA coisa e tem nome em portugues que diga o que falhou.
+#   - Verificacao nova? Primeiro faca passar localmente (comando no CLAUDE.md), depois adicione aqui.
+#   - Nunca coloque segredo direto no YAML: use Settings > Secrets do GitHub e ${{ secrets.NOME }}.
+#   - Exemplo de job novo:
+#       testes:
+#         name: Testes automatizados
+#         runs-on: ubuntu-latest
+#         steps:
+#           - uses: actions/checkout@v4
+#           - run: vendor/bin/phpunit
+
+name: CI
+
+on:
+  push:
+    branches: [main, "feats/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sintaxe:
+    name: Sintaxe PHP 8.2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: none
+      - name: php -l em todos os arquivos
+        run: |
+          find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+
+  analise:
+    name: Analise estatica (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer
+      - run: composer install --no-interaction --no-progress
+      - run: composer analise
+      - name: Dependencias com vulnerabilidade conhecida
+        run: composer audit
+
+  segredos:
+    name: Senhas e chaves vazadas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Nenhum .env ou backup versionado
+        run: |
+          if git ls-files | grep -Ei '(^|/)\.env$|\.bak$'; then
+            echo "::error::Arquivo .env ou .bak foi commitado. Remova do Git e troque as senhas."
+            exit 1
+          fi
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  seguranca:
+    name: Regras de seguranca do projeto
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sem JavaScript inline (a CSP bloqueia)
+        run: |
+          if grep -rnE --include='*.php' 'on(click|change|submit|load|input)=' . --exclude-dir=vendor; then
+            echo "::error::Use addEventListener em ASSETS/JS em vez de atributos on*=."
+            exit 1
+          fi
+      - name: Sem session_start() fora do nucleo de seguranca
+        run: |
+          if grep -rn --include='*.php' 'session_start()' . --exclude-dir=vendor | grep -v 'BACKEND/SEGURANCA/seguranca.php'; then
+            echo "::error::Inclua trava.php ou BACKEND/SEGURANCA/seguranca.php em vez de chamar session_start()."
+            exit 1
+          fi
