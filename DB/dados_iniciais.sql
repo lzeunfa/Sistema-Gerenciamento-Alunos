@@ -16,7 +16,8 @@ INSERT dbo.MODALIDADES (NOMEMOD)
 SELECT v.NOMEMOD FROM (VALUES (N'MUAY THAI'), (N'PERSONAL FIGHT'), (N'KARATÊ'), (N'KICK FEM')) v(NOMEMOD)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.MODALIDADES m WHERE m.NOMEMOD = v.NOMEMOD);
 GO
--- Frequencia: o filtro "PLANO 2X/3X/4X" da tela de Alunos procura "2X", "3X" e "4X" neste texto
+-- Frequencia = quantas vezes por semana o aluno pode treinar (Notion "Projeto sistema GKT").
+-- O filtro "PLANO 2X/3X/4X" da tela de Alunos procura "2X", "3X" e "4X" neste texto.
 SET IDENTITY_INSERT dbo.OPCAOSEMANA ON;
 IF NOT EXISTS (SELECT 1 FROM dbo.OPCAOSEMANA WHERE OPCAOCOD = 1) INSERT dbo.OPCAOSEMANA (OPCAOCOD, OPCAO) VALUES (1, N'2x por semana');
 SET IDENTITY_INSERT dbo.OPCAOSEMANA OFF;
@@ -24,7 +25,7 @@ GO
 -- versoes antigas deste script criavam o codigo 1 como 'Segunda', que nao combina com os filtros
 UPDATE dbo.OPCAOSEMANA SET OPCAO = N'2x por semana' WHERE OPCAOCOD = 1 AND OPCAO = N'Segunda';
 INSERT dbo.OPCAOSEMANA (OPCAO)
-SELECT v.OPCAO FROM (VALUES (N'3x por semana'), (N'4x por semana')) v(OPCAO)
+SELECT v.OPCAO FROM (VALUES (N'1x por semana'), (N'3x por semana'), (N'4x por semana'), (N'5x por semana')) v(OPCAO)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.OPCAOSEMANA o WHERE o.OPCAO = v.OPCAO);
 GO
 SET IDENTITY_INSERT dbo.PLANOS ON;
