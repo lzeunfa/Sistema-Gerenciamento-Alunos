@@ -1,0 +1,102 @@
+<?php
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+
+//Regras do .htaccess e configuracao do Apache do XAMPP. So faz leituras (GET), nao altera dados.
+final class ConfiguracaoApacheTest extends TestCase
+{
+    private const BASE = 'http://localhost/Gkt/Sistema-Gerenciamento-Alunos/';
+
+    public static function setUpBeforeClass(): void
+    {
+        $socket = @fsockopen('127.0.0.1', 80, $errno, $errstr, 1);
+        if (!$socket) {
+            self::markTestSkipped('Apache do XAMPP não está rodando na porta 80.');
+        }
+        fclose($socket);
+    }
+
+    private function get(string $caminho): array
+    {
+        return (new Navegador())->get($caminho, self::BASE);
+    }
+
+    public static function arquivosInternos(): array
+    {
+        return array_map(fn($c) => [$c], [
+            '.env', '.env.example', '.git/config', '.GIT/config', '.gitignore', '.htaccess', '.github/workflows/ci.yml',
+            'DB/estrutura.sql', 'db/ESTRUTURA.SQL', 'DB/criar_admin.php', 'DB/anonimizar_antigos.php', 'DB/backup.ps1',
+            'DOC/SEGURANCA_LGPD.md', 'CLAUDE.md', 'README.md', 'CHANGELOG.md',
+            'BACKEND/CONNECTION/config.php', 'BACKEND/SEGURANCA/seguranca.php', 'BACKEND/CONTROLLER/funcoes.php',
+            'ASSETS/PAGINAS/ALUNOS.php', 'ASSETS/PAGINAS/_acoesAluno.php', 'trava.php',
+            'vendor/autoload.php', 'composer.json', 'composer.lock', 'phpstan.neon', 'phpunit.xml',
+            'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1',
+        ]);
+    }
+
+    #[DataProvider('arquivosInternos')]
+    public function testArquivoInternoNaoEhAcessivelPeloNavegador(string $caminho): void
+    {
+        //404 vem do nosso .htaccess; 403 do proprio Apache (bloqueia .ht* antes). Os dois impedem o download.
+        $resposta = $this->get($caminho);
+        $this->assertContains($resposta['status'], [403, 404], $caminho);
+        $this->assertStringNotContainsString('DB_PASSWORD', $resposta['corpo']);
+    }
+
+    public static function paginasPublicas(): array
+    {
+        return array_map(fn($c) => [$c], ['index.php', 'privacidade.php', 'ASSETS/CSS/loginStyle.css', 'ASSETS/JS/login.js']);
+    }
+
+    #[DataProvider('paginasPublicas')]
+    public function testPaginaPublicaAbre(string $caminho): void
+    {
+        $this->assertSame(200, $this->get($caminho)['status'], $caminho);
+    }
+
+    public function testPastasNaoListamArquivos(): void
+    {
+        $resposta = $this->get('ASSETS/IMGS/');
+        $this->assertSame(403, $resposta['status']);
+        $this->assertStringNotContainsString('Index of', $resposta['corpo']);
+    }
+
+    public function testServidorNaoRevelaVersoes(): void
+    {
+        $c = $this->get('index.php')['cabecalhos'];
+        $this->assertSame('Apache', $c['server'][0] ?? null);
+        $this->assertArrayNotHasKey('x-powered-by', $c);
+    }
+
+    public function testCabecalhosDeSegurancaSemDuplicar(): void
+    {
+        $c = $this->get('index.php')['cabecalhos'];
+        foreach (['x-frame-options' => 'DENY', 'x-content-type-options' => 'nosniff', 'referrer-policy' => 'same-origin'] as $nome => $valor) {
+            $this->assertSame([$valor], $c[$nome] ?? [], $nome);
+        }
+        $this->assertCount(1, $c['content-security-policy'] ?? []);
+        $this->assertNotEmpty($c['permissions-policy'] ?? []);
+    }
+
+    public function testArquivosEstaticosTambemTemCabecalhos(): void
+    {
+        $c = $this->get('ASSETS/CSS/loginStyle.css')['cabecalhos'];
+        $this->assertSame(['nosniff'], $c['x-content-type-options'] ?? []);
+    }
+
+    public function testPaginaDeErroNaoMostraDetalhesDoServidor(): void
+    {
+        $corpo = $this->get('nao-existe-' . uniqid() . '.php')['corpo'];
+        $this->assertStringNotContainsStringIgnoringCase('Apache/2', $corpo);
+        $this->assertStringNotContainsString('C:\\xampp', $corpo);
+    }
+
+    public function testApacheSoAtendeEsteComputador(): void
+    {
+        $httpd = @file_get_contents('C:/xampp/apache/conf/httpd.conf');
+        if ($httpd === false) {
+            $this->markTestSkipped('httpd.conf não encontrado');
+        }
+        $this->assertMatchesRegularExpression('/^Listen 127\.0\.0\.1:80\r?$/m', $httpd, 'o httpd.conf usa quebra de linha do Windows');
+    }
+}

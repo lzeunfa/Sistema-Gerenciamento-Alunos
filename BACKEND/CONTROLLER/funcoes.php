@@ -5,9 +5,11 @@ function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep
      try {
           $pdo = Database::getConexao();
           $pdo->beginTransaction();
+          //aluno ja cadastrado como INATIVO comeca a contar os 5 anos de guarda hoje (DB/anonimizar_antigos.php)
           $sqlCadastroAluno = "INSERT INTO ALUNOS
-            (ALUMATRICULA,ALUNOME,ALUTELEFONE,ALUEMAIL,ALUCPF,ALUSEX,ALUDATANASC,ALUCEP,ALUENDERECO,ALUSTATUS,ALURESPNOME,ALURESPCPF,ALUCIENCIAPRIVACIDADE)
-            VALUES(:ALUMATRICULA, :ALUNOME, :ALUTELEFONE, :ALUEMAIL, :ALUCPF, :ALUSEX, :ALUDATANASC, :ALUCEP, :ALUENDERECO,:ALUSTATUS,:ALURESPNOME,:ALURESPCPF,GETDATE())";
+            (ALUMATRICULA,ALUNOME,ALUTELEFONE,ALUEMAIL,ALUCPF,ALUSEX,ALUDATANASC,ALUCEP,ALUENDERECO,ALUSTATUS,ALURESPNOME,ALURESPCPF,ALUCIENCIAPRIVACIDADE,ALUDATAINATIVACAO)
+            VALUES(:ALUMATRICULA, :ALUNOME, :ALUTELEFONE, :ALUEMAIL, :ALUCPF, :ALUSEX, :ALUDATANASC, :ALUCEP, :ALUENDERECO,:ALUSTATUS,:ALURESPNOME,:ALURESPCPF,GETDATE(),
+                    CASE WHEN :STATUSNOVO = :INATIVO THEN GETDATE() ELSE NULL END)";
           $responsavelNome = $responsavelNome !== '' ? $responsavelNome : null;
           $responsavelCpf = $responsavelCpf !== '' ? $responsavelCpf : null;
           $stmt = $pdo->prepare($sqlCadastroAluno);
@@ -24,6 +26,9 @@ function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep
           $stmt->bindParam(':ALUSTATUS', $status);
           $stmt->bindParam(':ALURESPNOME', $responsavelNome);
           $stmt->bindParam(':ALURESPCPF', $responsavelCpf);
+          $inativo = codigoStatusInativo() ?? -1;
+          $stmt->bindParam(':STATUSNOVO', $status);
+          $stmt->bindParam(':INATIVO', $inativo);
           $resultado = $stmt->execute();
           
           if ($resultado) {
@@ -287,9 +292,10 @@ function idsInteiros($valores): array
 }
 
 //matricula vem da URL ou do POST: so letras, numeros e hifen
+//(\z e nao $: no PHP o $ tambem aceita uma quebra de linha no final)
 function matriculaValida($matricula): ?string
 {
-     return is_string($matricula) && preg_match('/^[0-9A-Za-z-]{1,20}$/', $matricula) ? $matricula : null;
+     return is_string($matricula) && preg_match('/^[0-9A-Za-z-]{1,20}\z/', $matricula) ? $matricula : null;
 }
 
 //le e valida os dados do formulario de aluno; devolve [dados, lista de campos com erro]
@@ -439,7 +445,8 @@ function atualizarAluno(string $matricula, array $aluno, bool $registrarCiencia)
           if (isset($pdo) && $pdo->inTransaction()) {
                $pdo->rollBack();
           }
-          if ($error->getCode() === '23000') {
+          //23000 vale para UNIQUE e para chave estrangeira; so 2627/2601 sao CPF ou e-mail repetido
+          if (in_array($error->errorInfo[1] ?? null, [2627, 2601], true)) {
                return 'duplicado';
           }
           error_log("GKT erro ao atualizar aluno: " . $error->getMessage());

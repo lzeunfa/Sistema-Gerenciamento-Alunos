@@ -12,8 +12,8 @@ RedirectMatch 404 (?i)/(DB|DOC|BACKEND/CONNECTION|BACKEND/SEGURANCA|ASSETS/PAGIN
 RedirectMatch 404 (?i)/BACKEND/CONTROLLER/funcoes\.php$
 RedirectMatch 404 (?i)/trava\.php$
 # dependencias e configuracao de ferramentas de desenvolvimento
-RedirectMatch 404 (?i)/(vendor)(/|$)
-RedirectMatch 404 (?i)/(composer\.json|composer\.lock|phpstan\.neon)$
+RedirectMatch 404 (?i)/(vendor|tests)(/|$)
+RedirectMatch 404 (?i)/(composer\.json|composer\.lock|phpstan\.neon|phpunit\.xml)$
 # tipos de arquivo que nunca devem ser baixados
 RedirectMatch 404 (?i)\.(sql|md|ini|log|bak|env|sh|ps1|neon|yml|yaml|lock)$
 

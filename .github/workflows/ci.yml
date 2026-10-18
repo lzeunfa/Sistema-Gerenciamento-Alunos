@@ -51,6 +51,19 @@ jobs:
       - name: Dependencias com vulnerabilidade conhecida
         run: composer audit
 
+  testes:
+    name: Testes de unidade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer
+      - run: composer install --no-interaction --no-progress
+      # integracao, funcional e Apache precisam de SQL Server e XAMPP: rodam na maquina local (tests/README.md)
+      - run: vendor/bin/phpunit --testsuite unidade
+
   segredos:
     name: Senhas e chaves vazadas
     runs-on: ubuntu-latest

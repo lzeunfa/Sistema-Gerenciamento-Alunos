@@ -41,6 +41,10 @@ C:\xampp\php\php.exe DB/criar_admin.php <login>
 
 # backup do banco
 pwsh DB/backup.ps1
+
+# testes automatizados (detalhes em tests/README.md); o banco de teste e recriado do zero, o real nunca e tocado
+pwsh tests/preparar_banco_teste.ps1
+C:\xampp\php\php.exe vendor\bin\phpunit
 ```
 
 Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAMPP escuta só em 127.0.0.1).
@@ -74,7 +78,8 @@ Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAM
 - Toda mudança visível para o usuário ou na estrutura do banco entra em `CHANGELOG.md`, seção `[Não publicado]`.
 - Decisão de arquitetura ou de segurança nova → entrada em `DOC/DECISOES.md`.
 - Nunca commite `.env`, `vendor/`, backups (`*.bak`) ou logs.
-- Antes de considerar uma tarefa pronta: sintaxe OK, `composer analise` sem erros novos e o fluxo testado no navegador.
+- Antes de considerar uma tarefa pronta: sintaxe OK, `composer analise` sem erros novos, **todos os testes passando** e o fluxo testado no navegador.
+- Bug corrigido ou regra nova → teste novo que falharia sem a mudança (ver tests/README.md).
 
 ## Armadilhas conhecidas
 - O `php` do PATH é o 8.5 do usuário (sem driver SQL Server). Para o sistema use sempre `C:\xampp\php\php.exe` (8.2).

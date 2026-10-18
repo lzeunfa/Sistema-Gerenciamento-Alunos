@@ -30,11 +30,18 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 ### Adicionado
 - `CLAUDE.md` com as regras do projeto para IA e equipe, `.env.example`, `DOC/DECISOES.md`, modelo de PR e skill `/revisar-pr`.
 - CI no GitHub Actions: checagem de sintaxe PHP, análise estática (PHPStan), busca de senhas vazadas e auditoria de dependências.
+- Testes automatizados com PHPUnit (216 testes): unidade, integração com banco de teste, funcionais e configuração do Apache.
+  O CI roda os de unidade. Como rodar: `tests/README.md`.
 - Botões **Editar**, **Exportar dados** e **Excluir** nas listas de Alunos e Turmas (direitos do titular, LGPD art. 18).
   Exportar baixa um JSON com todos os dados e inscrições do aluno; Excluir anonimiza os dados pessoais e mantém
   matrícula e inscrições para estatística.
 - Situação `INATIVO` para alunos que encerraram a matrícula.
 - `DB/anonimizar_antigos.php`: anonimiza alunos inativos há mais de 5 anos (rodar pelo terminal com `--executar`).
+
+### Corrigido
+- Aluno cadastrado já como INATIVO ficava sem data de inativação e nunca entrava na retenção de 5 anos.
+- Erro de modalidade inexistente na edição aparecia como "CPF ou e-mail já pertence a outro aluno".
+- Matrícula com quebra de linha no final passava pela validação.
 
 ### Alterado
 - Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.

@@ -19,7 +19,8 @@ class Database
             $db_conn = $arquivoEnv["DB_CONNECTION"];
             $db_host = $arquivoEnv["DB_HOST"];
             $db_port = $arquivoEnv["DB_PORT"];
-            $db_name = $arquivoEnv["DB_DATABASE"];
+            //os testes automatizados apontam para o banco gktgym_teste por esta variavel (ver tests/README.md)
+            $db_name = getenv('GKT_DB_DATABASE') ?: $arquivoEnv["DB_DATABASE"];
             $db_user = $arquivoEnv["DB_USERNAME"];
             $db_pass = $arquivoEnv["DB_PASSWORD"];
             //host,porta e nome do banco.

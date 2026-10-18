@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Testes automatizados do Sistema GKT. Como rodar e o que cada grupo precisa: tests/README.md
+  composer testes              todos
+  composer testes:unidade      so os que nao precisam de banco (o CI roda estes)
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true"
+         failOnRisky="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnSkippedTests="true">
+    <testsuites>
+        <testsuite name="unidade">
+            <directory>tests/Unidade</directory>
+        </testsuite>
+        <testsuite name="integracao">
+            <directory>tests/Integracao</directory>
+        </testsuite>
+        <testsuite name="funcional">
+            <directory>tests/Funcional</directory>
+        </testsuite>
+        <testsuite name="apache">
+            <directory>tests/Apache</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
