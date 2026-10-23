@@ -42,11 +42,13 @@ if (session_status() === PHP_SESSION_NONE) {
 header_remove('X-Powered-By');
 header("Content-Security-Policy: default-src 'self'; "
     . "script-src 'self' https://cdn.jsdelivr.net; "
-    . "style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-    . "font-src 'self' https://fonts.gstatic.com; "
+    . "style-src 'self' https://cdn.jsdelivr.net; "
+    . "font-src 'self'; "
     . "img-src 'self' data:; "
     . "connect-src 'self'; "
     . "form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
+//pagina so carrega recurso de outro site que autorize (o Bootstrap do jsDelivr vem com crossorigin + SRI)
+header('Cross-Origin-Embedder-Policy: require-corp');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');

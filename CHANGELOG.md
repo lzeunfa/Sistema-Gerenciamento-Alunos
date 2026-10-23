@@ -30,19 +30,61 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 ### Adicionado
 - `CLAUDE.md` com as regras do projeto para IA e equipe, `.env.example`, `DOC/DECISOES.md`, modelo de PR e skill `/revisar-pr`.
 - CI no GitHub Actions: checagem de sintaxe PHP, análise estática (PHPStan), busca de senhas vazadas e auditoria de dependências.
+- Testes automatizados com PHPUnit (216 testes): unidade, integração com banco de teste, funcionais e configuração do Apache.
+  O CI roda os de unidade. Como rodar: `tests/README.md`.
+- Ambiente Docker (`docker/`): PHP 8.2 + Apache + SQL Server 2022 com `docker compose`, testes dentro do container
+  e varredura de segurança com OWASP ZAP. Passo a passo para Debian em `docker/README.md`. O CI roda todos os testes
+  nos containers.
+- `config.php` aceita a configuração do banco por variáveis de ambiente quando não há `.env`.
+- Varredura OWASP ZAP logada como administrador (`docker/varredura-autenticada.sh`).
+- `robots.txt` pedindo aos buscadores para não indexar o sistema.
 - Botões **Editar**, **Exportar dados** e **Excluir** nas listas de Alunos e Turmas (direitos do titular, LGPD art. 18).
   Exportar baixa um JSON com todos os dados e inscrições do aluno; Excluir anonimiza os dados pessoais e mantém
   matrícula e inscrições para estatística.
 - Situação `INATIVO` para alunos que encerraram a matrícula.
 - `DB/anonimizar_antigos.php`: anonimiza alunos inativos há mais de 5 anos (rodar pelo terminal com `--executar`).
+- Docker: backup verificado (`docker/backup.sh`, com teste de restauração), restauração (`docker/restaurar.sh`,
+  aceita backup feito no XAMPP), teste de carga (`docker/teste-carga.sh`) e de volume (`docker/teste-volume.sh`).
+- Docker: `ENDERECO_APP` em `docker/.env` escolhe quem abre o sistema (padrão: só o próprio computador).
+
+### Corrigido
+- Aluno cadastrado já como INATIVO ficava sem data de inativação e nunca entrava na retenção de 5 anos.
+- Erro de modalidade inexistente na edição aparecia como "CPF ou e-mail já pertence a outro aluno".
+- Matrícula com quebra de linha no final passava pela validação.
+- Login com usuário/senha enviados como lista (`inputUser[]=`) e `sistema.php?pagina[]=` davam erro 500.
+- Paginação desenhava um botão por página (com 20 mil alunos, 500 botões e 251 KB por tela); agora mostra no máximo
+  9, e página além da última cai na última.
+- Tabela de tentativas de login crescia sem limite sob ataque de força bruta; o login apaga as de mais de 1 dia.
+- Dois cadastros ao mesmo tempo (duas pessoas na recepção) recebiam a mesma matrícula e o segundo falhava com
+  "erro ao cadastrar". Achado no teste de carga (1 em 168 cadastros); agora os cadastros entram em fila.
+- Uma matrícula com letras no banco impedia qualquer cadastro novo.
+
+### Desempenho
+- Índices nas chaves estrangeiras de `ALUNOS_INSCRICAO` e em `ALUNOS.ALUSTATUS` (`DB/migracao_desempenho.sql`).
+- Lista de alunos escolhe as 40 matrículas da página antes de montar as colunas. Com 100 mil alunos fictícios:
+  filtro "pendentes" de 573 para 126 ms, Turmas de 197 para 95 ms.
+
+### Segurança
+- Achados do OWASP ZAP corrigidos: CSP também nas páginas de erro do Apache; cabeçalhos
+  `Cross-Origin-Resource-Policy`, `Cross-Origin-Embedder-Policy` e `Permissions-Policy` em todas as respostas.
+- Fontes da tela de login hospedadas no próprio sistema: sem Google Fonts, a página não carrega nada de outros
+  sites e o IP do visitante deixa de ser enviado ao Google (LGPD). A CSP ficou mais restrita.
+- No container, a versão do Apache não aparece mais nos cabeçalhos nem nas páginas de erro.
+- No container o sistema só funciona em HTTPS (TLS 1.2/1.3, porta 8443), com HSTS e cookie de sessão `Secure`;
+  quem abre por `http://` é redirecionado. Certificado gerado por instalação ou trocado por um real (`docker/README.md`).
+- Comentários de desenvolvimento não vão mais para o HTML enviado ao navegador.
+- Docker: varreduras ZAP (`docker/varredura.sh`, `docker/varredura-autenticada.sh`), carga e volume atacam uma
+  cópia do sistema ligada ao banco de teste; os dados e a auditoria do banco real não são tocados.
 
 ### Alterado
+- Ao clicar num campo já preenchido (tela Editar), o cursor vai para o final do texto em vez do começo.
 - Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.
 - Filtro "Pendentes" mostra só a situação `PENDENTE` (antes incluía qualquer situação diferente de `PAGO`).
 
 ### Banco
 - Rodar de novo `DB/dados_iniciais.sql` (não duplica dados).
 - Rodar `DB/migracao_direitos_titular.sql` (situação `INATIVO` e colunas `ALUDATAINATIVACAO` e `ALUANONIMIZADO`).
+- Rodar `DB/migracao_desempenho.sql` (índices; só melhora velocidade, não muda dados).
 
 ## [1.1.0] - 2026-10-14
 

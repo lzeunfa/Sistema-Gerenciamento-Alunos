@@ -7,7 +7,8 @@
         "php": ">=8.2"
     },
     "require-dev": {
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
     },
     "config": {
         "platform": {
@@ -16,6 +17,8 @@
         "sort-packages": true
     },
     "scripts": {
-        "analise": "phpstan analyse --no-progress --memory-limit=512M"
+        "analise": "phpstan analyse --no-progress --memory-limit=1G",
+        "testes": "phpunit",
+        "testes:unidade": "phpunit --testsuite unidade"
     }
 }

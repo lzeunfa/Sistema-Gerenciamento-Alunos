@@ -1,4 +1,4 @@
-<!--confirmacao do botao Excluir: anonimiza o aluno (LGPD art. 16 e 18, VI)-->
+<?php /* confirmacao do botao Excluir: anonimiza o aluno (LGPD art. 16 e 18, VI) */ ?>
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
 $matricula = matriculaValida($_GET['matricula'] ?? null);

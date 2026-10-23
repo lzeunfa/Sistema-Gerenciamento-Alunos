@@ -1,4 +1,4 @@
-<!--html da pagina do dashboard-->
+<?php /* html da pagina do dashboard */ ?>
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
 $totalAlunos = contarAlunosCompletos();
@@ -6,17 +6,17 @@ $totalTurmas = count(listarModalidades());
 $totalPendentes = contarAlunosCompletos('alunos_pendentes');
 ?>
 
-<!--area para infos da academia-->
+<?php /* area para infos da academia */ ?>
 <section id="infosAcademia" class="d-flex flex-wrap justify-content-center">
 
-    <!--divs pros cards com as infos-->
+    <?php /* divs pros cards com as infos */ ?>
     <div id="quantidadeAlunos" class="containerInfos">
 
         <div id="iconeQtdAlunos" class="containerIconeInfos">
             <img src="ASSETS/IMGS/ICONES/iconeAlunos.png" alt="icone dois bonequinhos">
         </div>
 
-        <!--recebe pesquisa da soma do sql do total de alunos-->
+        <?php /* recebe pesquisa da soma do sql do total de alunos */ ?>
         <p id="numTotalAlunos" class="textoEscuro"><?= $totalAlunos ?></p>
         <p>Total de alunos</p>
 
@@ -28,20 +28,20 @@ $totalPendentes = contarAlunosCompletos('alunos_pendentes');
             <img src="ASSETS/IMGS/ICONES/iconeTurmas.png" alt="icone dois bonequinhos">
         </div>
 
-        <!--recebe pesquisa da soma do sql do total de turmas-->
+        <?php /* recebe pesquisa da soma do sql do total de turmas */ ?>
         <p id="numTurmas" class="textoEscuro"><?= $totalTurmas ?></p>
         <p>Turmas</p>
 
     </div>
 
-    <!--esta div serve apenas paracentralizacao e organizacao de layout-->
+    <?php /* esta div serve apenas paracentralizacao e organizacao de layout */ ?>
     <div class="d-flex flex-wrap justify-content-center">
 
         <div id="quantidadeAlunosPendentes" class="containerInfos">
             <div id="iconeQtdPendentes" class="containerIconeInfos">
                 <img src="ASSETS/IMGS/ICONES/exclamation-solid-full.png" alt="icone dois bonequinhos">
             </div>
-            <!--recebe pesquisa da soma do sql do total de alunos com pendencias-->
+            <?php /* recebe pesquisa da soma do sql do total de alunos com pendencias */ ?>
             <p id="numPendentes" class="textoEscuro"><?= $totalPendentes ?></p>
             <p>Aluno(s) com pendências</p>
         </div>
@@ -50,7 +50,7 @@ $totalPendentes = contarAlunosCompletos('alunos_pendentes');
             <div id="iconeLucroBruto" class="containerIconeInfos">
                 <img src="ASSETS/IMGS/ICONES/money-bill-solid-full.png" alt="icone dois bonequinhos">
             </div>
-            <!--recebe pesquisa da soma do sql do total de mensalidades pagas-->
+            <?php /* recebe pesquisa da soma do sql do total de mensalidades pagas */ ?>
             <p id="numLucroBruto" class="textoEscuro">R$ NUM</p>
             <p>Lucro bruto</p>
         </div>
@@ -59,17 +59,17 @@ $totalPendentes = contarAlunosCompletos('alunos_pendentes');
 
 </section>
 
-<!--section com o divisor com a logo da gkt-->
+<?php /* section com o divisor com a logo da gkt */ ?>
 <section id="divisor" class="d-flex justify-content-center align-items-center mt-3 mb-3">
     <img src="ASSETS/IMGS/LOGOS/logo_gktSF.png" alt="logo da academia gkt" width="100px">
 </section>
 
-<!--section container para as opcoes de gerenciamento-->
+<?php /* section container para as opcoes de gerenciamento */ ?>
 <section id="opcoesGerenciamento" class="d-flex flex-column justify-content-center align-items-center">
 
     <h1>Opções de gerenciamento</h1>
 
-    <!--div centralizadora das opcoes-->
+    <?php /* div centralizadora das opcoes */ ?>
     <div class="d-flex flex-wrap justify-content-center">
 
         <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">

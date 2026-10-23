@@ -1,11 +1,13 @@
 # Analise estatica do PHP (rodar: composer analise). O CI falha se aparecer erro.
 # Para subir o rigor: aumente "level" (0 a 10), corrija os erros novos e faca commit junto.
-# Nivel 1 hoje acusa "variavel pode nao existir" nas paginas de ASSETS/PAGINAS, que usam variaveis
-# definidas no sistema.php. Proximo passo: declarar essas variaveis com @var no topo de cada pagina.
+# Historico: nivel 0 -> 5 em 23/10/2026 (achou 2 bugs de entrada em formato de lista, ver CHANGELOG).
+# Nivel 6 exige declarar o tipo dos itens de todo array (~97 pontos): proximo passo de manutencao.
 parameters:
-    level: 0
+    level: 5
     phpVersion: 80200
     paths:
         - .
     excludePaths:
         - vendor
+    bootstrapFiles:
+        - tests/phpstan-constantes.php

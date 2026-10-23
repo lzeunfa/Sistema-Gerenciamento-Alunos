@@ -4,6 +4,12 @@
 # Nao listar o conteudo das pastas
 Options -Indexes
 
+# O sistema so usa GET, POST e HEAD. PUT, DELETE, OPTIONS etc. sao recusados (menos superficie de ataque;
+# achado "Proxy Disclosure" do OWASP ZAP, que usava OPTIONS/TRACE para identificar o servidor)
+<LimitExcept GET POST HEAD>
+    Require all denied
+</LimitExcept>
+
 # Arquivos e pastas internos respondem 404, como se nao existissem:
 # .env, .git, .gitignore, .htaccess e qualquer outro arquivo oculto
 RedirectMatch 404 (?i)/\.
@@ -12,8 +18,8 @@ RedirectMatch 404 (?i)/(DB|DOC|BACKEND/CONNECTION|BACKEND/SEGURANCA|ASSETS/PAGIN
 RedirectMatch 404 (?i)/BACKEND/CONTROLLER/funcoes\.php$
 RedirectMatch 404 (?i)/trava\.php$
 # dependencias e configuracao de ferramentas de desenvolvimento
-RedirectMatch 404 (?i)/(vendor)(/|$)
-RedirectMatch 404 (?i)/(composer\.json|composer\.lock|phpstan\.neon)$
+RedirectMatch 404 (?i)/(vendor|tests|docker|relatorios)(/|$)
+RedirectMatch 404 (?i)/(composer\.json|composer\.lock|phpstan\.neon|phpunit\.xml)$
 # tipos de arquivo que nunca devem ser baixados
 RedirectMatch 404 (?i)\.(sql|md|ini|log|bak|env|sh|ps1|neon|yml|yaml|lock)$
 
@@ -24,4 +30,13 @@ RedirectMatch 404 (?i)\.(sql|md|ini|log|bak|env|sh|ps1|neon|yml|yaml|lock)$
     Header set Referrer-Policy "same-origin"
     Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
     Header set Cross-Origin-Opener-Policy "same-origin"
+    # outros sites nao podem embutir nada daqui (arquivos, fontes, imagens) - achado do OWASP ZAP
+    Header always set Cross-Origin-Resource-Policy "same-origin"
+
+    # Paginas de erro do proprio Apache (404, 403...) nao passam pelo PHP, que e quem envia a CSP:
+    # recebem uma politica que nao permite carregar nada (achado do OWASP ZAP em robots.txt/sitemap.xml)
+    Header always set Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" "expr=%{REQUEST_STATUS} -ge 400"
+    Header always set X-Content-Type-Options "nosniff" "expr=%{REQUEST_STATUS} -ge 400"
+    Header always set X-Frame-Options "DENY" "expr=%{REQUEST_STATUS} -ge 400"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" "expr=%{REQUEST_STATUS} -ge 400"
 </IfModule>

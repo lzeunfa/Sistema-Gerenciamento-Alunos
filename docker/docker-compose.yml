@@ -1,0 +1,103 @@
+# Sistema GKT em containers. Passo a passo: docker/README.md
+#
+#   bash docker/construir.sh && docker compose -f docker/docker-compose.yml up -d --wait app   https://127.0.0.1:8443
+#   docker compose -f docker/docker-compose.yml --profile testes run --rm testes      testes automatizados
+#   bash docker/varredura.sh                                                          varredura OWASP ZAP (sem login)
+#   bash docker/varredura-autenticada.sh                                              varredura OWASP ZAP (logada)
+#   bash docker/teste-carga.sh                                                        teste de carga (k6)
+#   bash docker/teste-volume.sh 20000                                                 teste de volume
+#   (ZAP, carga e volume atacam uma copia ligada ao banco gktgym_teste: docker/copia-teste.sh)
+#   bash docker/backup.sh                                                             backup verificado do banco
+#   bash docker/restaurar.sh <arquivo.bak> --confirmo-substituir                      restaura um backup
+#
+# As senhas vem de docker/.env (copie de docker/.env.example). Esse arquivo nunca vai para o Git.
+
+name: gkt
+
+services:
+  banco:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:?defina SA_PASSWORD em docker/.env}
+    volumes:
+      - dados-sqlserver:/var/opt/mssql
+    # sem "ports": o banco so e acessivel pelos outros containers, nunca pela rede
+    restart: unless-stopped
+
+  banco-init:
+    build: { context: .., dockerfile: docker/Dockerfile, target: producao }
+    image: gkt-app:producao
+    command: ["php", "docker/iniciar-banco.php"]
+    environment: &banco-env
+      DB_CONNECTION: sqlsrv
+      DB_HOST: banco
+      DB_PORT: "1433"
+      DB_DATABASE: gktgym
+      DB_USERNAME: gkt_app
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD em docker/.env}
+      DB_TRUST_CERT: "1"
+      SA_PASSWORD: ${SA_PASSWORD}
+    depends_on: [banco]
+    restart: "no"
+
+  app:
+    image: gkt-app:producao
+    pull_policy: never   # imagem construida localmente pelo servico banco-init
+    environment:
+      DB_CONNECTION: sqlsrv
+      DB_HOST: banco
+      DB_PORT: "1433"
+      DB_DATABASE: gktgym
+      DB_USERNAME: gkt_app
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_TRUST_CERT: "1"
+      # IP do servidor na rede, incluido no certificado autoassinado (ex.: 192.168.1.23)
+      GKT_CERT_IP: ${GKT_CERT_IP:-}
+    volumes:
+      # certificado HTTPS: gerado na primeira subida ou substituido por um real (docker/README.md)
+      - certificados:/etc/gkt-certificados
+    ports:
+      # so HTTPS. Padrao: so este computador; ENDERECO_APP=0.0.0.0 no docker/.env abre para a rede da academia
+      - "${ENDERECO_APP:-127.0.0.1}:${PORTA_APP:-8443}:443"
+    depends_on:
+      banco-init: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  testes:
+    profiles: [testes]
+    build: { context: .., dockerfile: docker/Dockerfile, target: testes }
+    image: gkt-app:testes
+    environment:
+      <<: *banco-env
+      GKT_DB_DATABASE: gktgym_teste
+      GKT_URL_APACHE: https://app/
+      GKT_TLS_INSEGURO: "1"   # certificado autoassinado do container de teste
+    depends_on:
+      app: { condition: service_healthy }
+
+  zap:
+    profiles: [seguranca]
+    image: zaproxy/zap-stable   # imagem oficial do ZAP no Docker Hub (o ghcr.io nao responde em algumas redes)
+    # varredura ATIVA, so contra a copia ligada ao banco de teste; rode por docker/varredura.sh, que sobe a copia
+    command: ["zap-full-scan.py", "-t", "https://gkt-app-teste/", "-r", "zap-relatorio.html", "-J", "zap-relatorio.json", "-I", "-m", "5"]
+    user: root
+    volumes:
+      - ../relatorios:/zap/wrk:rw
+
+  carga:
+    profiles: [carga]
+    # teste de carga (escalabilidade), rodado por docker/teste-carga.sh contra a copia ligada ao banco de teste
+    image: grafana/k6:2.3.0
+    environment:
+      BASE_URL: https://gkt-app-teste
+      K6_INSECURE_SKIP_TLS_VERIFY: "true"   # certificado autoassinado do container
+    volumes:
+      - ../tests/carga:/scripts:ro
+      - ../relatorios:/relatorios:rw
+    user: root
+
+volumes:
+  dados-sqlserver:
+  certificados:

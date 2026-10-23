@@ -32,6 +32,7 @@ composer analise
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_login.sql
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_seguranca.sql
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_direitos_titular.sql
+sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_desempenho.sql
 
 # retenção de 5 anos: sem parâmetro só simula; com --executar anonimiza os inativos há mais de 5 anos
 C:\xampp\php\php.exe DB/anonimizar_antigos.php --executar
@@ -41,6 +42,20 @@ C:\xampp\php\php.exe DB/criar_admin.php <login>
 
 # backup do banco
 pwsh DB/backup.ps1
+
+# testes automatizados (detalhes em tests/README.md); o banco de teste e recriado do zero, o real nunca e tocado
+pwsh tests/preparar_banco_teste.ps1
+C:\xampp\php\php.exe vendor\bin\phpunit
+```
+
+Em Docker (Debian, detalhes em docker/README.md):
+
+```bash
+bash docker/construir.sh && docker compose -f docker/docker-compose.yml up -d --wait app   # sistema em https://127.0.0.1:8443
+docker compose -f docker/docker-compose.yml --profile testes run --rm testes    # todos os testes
+bash docker/varredura.sh && bash docker/varredura-autenticada.sh                # OWASP ZAP sem e com login
+bash docker/teste-carga.sh && bash docker/teste-volume.sh                         # carga (k6) e volume
+bash docker/backup.sh                                                            # backup verificado
 ```
 
 Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAMPP escuta só em 127.0.0.1).
@@ -74,14 +89,16 @@ Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAM
 - Toda mudança visível para o usuário ou na estrutura do banco entra em `CHANGELOG.md`, seção `[Não publicado]`.
 - Decisão de arquitetura ou de segurança nova → entrada em `DOC/DECISOES.md`.
 - Nunca commite `.env`, `vendor/`, backups (`*.bak`) ou logs.
-- Antes de considerar uma tarefa pronta: sintaxe OK, `composer analise` sem erros novos e o fluxo testado no navegador.
+- Antes de considerar uma tarefa pronta: sintaxe OK, `composer analise` sem erros novos, **todos os testes passando** e o fluxo testado no navegador.
+- Bug corrigido ou regra nova → teste novo que falharia sem a mudança (ver tests/README.md).
 
 ## Armadilhas conhecidas
+- O código roda em Windows (XAMPP) e Linux (Docker): caminhos de arquivo com as maiúsculas exatas do nome real; scripts `.sh` com LF.
+- Configuração do banco: `.env` na raiz (XAMPP) ou variáveis de ambiente (Docker). Chave nova? Coloque nos dois `.env.example` e no `docker-compose.yml`.
 - O `php` do PATH é o 8.5 do usuário (sem driver SQL Server). Para o sistema use sempre `C:\xampp\php\php.exe` (8.2).
 - `composer install` falha com "zip extension missing" nos dois PHPs. Use:
   `C:\xampp\php\php.exe -d extension=zip C:\ProgramData\ComposerSetup\bin\composer.phar install`
 - `vendor/` fica dentro do site: o `.htaccess` bloqueia; não remova essa regra.
 - Windows não diferencia maiúsculas: regras do `.htaccess` usam `(?i)`.
 - Cookie de sessão é `SameSite=Lax` de propósito: `Strict` desloga quem abre o sistema por um link (ver DOC/DECISOES.md).
-- `DB/update_db.php` é antigo e conflita com o esquema atual (`ALUSTATUS` é `int`). Não rode.
 - Revisão de PR: use a skill `/revisar-pr`.

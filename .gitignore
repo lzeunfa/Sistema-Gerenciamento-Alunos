@@ -2,3 +2,5 @@
 vendor/
 *.bak
 *.log
+.phpunit.cache/
+relatorios/
