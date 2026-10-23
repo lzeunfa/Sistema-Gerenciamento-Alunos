@@ -25,10 +25,8 @@ SQL Server Express), no banco de teste.
 | Manutenibilidade | Complexidade máxima de função **30 → 13**, média 3,1; análise estática (PHPStan) no nível 5 sem erros. |
 | Backup | Scripts de backup verificado e restauração criados; parte SQL ensaiada no Windows. |
 
-**O que não deu para rodar:** o Debian saiu da rede por volta das 02h30 (provavelmente suspendeu; não responde a
-ping nem SSH). Ficaram para quando ele voltar: teste de carga no container (k6; no Windows já foi feito), nova varredura ZAP para confirmar as duas últimas
-correções, backup/restauração e volume dentro dos containers e o teste de reinício do banco. A lista exata de
-comandos está na seção 9.
+**Rodada no Debian (23/10, manhã):** o Debian tinha suspendido às 02h30; voltou às 09h e a suspensão foi desligada.
+Todos os testes que faltavam rodaram nos containers. Resultados na seção 10.
 
 ## 2. Passo a passo, com cada comando e o que ele faz
 
@@ -145,8 +143,8 @@ redirecionadas; a sessão continuou válida até o fim. **Nenhum alerta High.**
 
 | Aviso | Resultado |
 |---|---|
-| HSTS ausente em arquivos estáticos e páginas de erro | Corrigido: HSTS em toda resposta HTTPS, inclusive erros (com teste). *Falta confirmar em nova varredura.* |
-| Proxy Disclosure | Corrigido: `TRACE` desligado (`TraceEnable Off`) e `OPTIONS` recusado (só GET, POST e HEAD). *Falta confirmar em nova varredura.* |
+| HSTS ausente em arquivos estáticos e páginas de erro | Corrigido: HSTS em toda resposta HTTPS, inclusive erros (com teste). *Confirmado na seção 10.* |
+| Proxy Disclosure | Corrigido: `TRACE` desligado (`TraceEnable Off`) e `OPTIONS` recusado (só GET, POST e HEAD). *Confirmado na seção 10.* |
 | "Bypassing 403" | Mesmo falso positivo da 2ª rodada |
 
 ### 4.6 Revisão de segurança do código (leitura, sem executar)
@@ -275,3 +273,25 @@ docker compose -f docker/docker-compose.yml restart banco   # o sistema deve vol
 **Antes de colocar dados reais no Docker do Debian**, apague o banco usado nas varreduras desta noite (ele tem alunos
 e administradores fictícios criados pelo ZAP): `docker compose -f docker/docker-compose.yml down -v` e suba de novo.
 Daqui em diante as varreduras usam o banco de teste e não deixam nada no `gktgym`.
+
+## 10. Rodada no Debian — 23/10/2026, manhã
+
+Commit `aa71cde` (com a correção dos cadastros simultâneos), nos containers do Debian. Varreduras e carga contra a
+cópia ligada ao banco de teste (`docker/copia-teste.sh`).
+
+| Teste | Resultado |
+|---|---|
+| Testes automatizados no container | **303 passando**, 1 pulado (só vale no XAMPP) |
+| ZAP sem login (HTTPS) | **0 falhas, 141 aprovadas**. HSTS confirmado em tudo. Sobram 2 avisos sem risco: "Bypassing 403" (falso positivo, seção 4.3) e "Proxy Disclosure", que só identifica o nome "Apache" (sem versão; não existe proxy) |
+| ZAP logado | Plano completo executado sem erro, relatório em `relatorios/zap-autenticado.html` |
+| Carga (k6), 30 pessoas por 4,5 min + 5 logins/s | **Todos os limites aprovados**: 8.090 pedidos, **0 erros**, 196 cadastros gravados, telas p95 248 ms, login p95 332 ms. Pico do SQL Server: ~6,7 núcleos e 1,1 GB |
+| Volume, 20 mil alunos | Todas as telas entre 62 e 161 ms, tela de alunos com 127 KB |
+| Backup com teste de restauração | Backup verificado (5,1 MB) em `~/backups-gkt`, restaurado numa cópia: contagens idênticas |
+| Reinício do SQL Server com o sistema no ar | Sistema voltou sozinho em ~2 s |
+
+**Achado nesta rodada:** a 1ª execução do k6 mostrou 97% de falhas no dashboard. Não era o sistema: o k6 apaga os
+cookies a cada volta por padrão e cada pessoa simulada era deslogada (confirmado com `curl`, em que a sessão se
+mantém). Corrigido em `tests/carga/carga.js` (`noCookiesReset: true`); a 2ª execução é a da tabela.
+
+**Antes de colocar dados reais no Docker do Debian**, apague o banco das varreduras da noite: `docker compose -f
+docker/docker-compose.yml down -v` e suba de novo.
