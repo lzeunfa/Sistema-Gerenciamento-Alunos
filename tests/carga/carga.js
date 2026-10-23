@@ -16,6 +16,8 @@ const SENHA = __ENV.K6_SENHA;
 const cadastrosFeitos = new Counter('cadastros_feitos');
 
 export const options = {
+    // o k6 apaga os cookies a cada volta por padrao: cada "pessoa" seria deslogada depois da 1a volta
+    noCookiesReset: true,
     scenarios: {
         recepcao: {
             executor: 'ramping-vus',
