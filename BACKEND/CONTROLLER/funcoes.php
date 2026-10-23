@@ -252,7 +252,19 @@ function matriculaValida($matricula): ?string
 //le e valida os dados do formulario de aluno; devolve [dados, lista de campos com erro]
 function lerAlunoDoPost(): array
 {
-     $aluno = [
+     return validarAluno(normalizarAlunoDoPost());
+}
+
+//numero inteiro positivo vindo de um campo do formulario (0 se nao for numero)
+function inteiroDoCampo(string $nome): int
+{
+     return ctype_digit(campo($nome)) ? (int) campo($nome) : 0;
+}
+
+//le o formulario e padroniza: maiusculas no nome, so digitos em CPF/telefone/CEP, codigos inteiros
+function normalizarAlunoDoPost(): array
+{
+     return [
           'nome' => mb_strtoupper(campo('nome')),
           'telefone' => soDigitos(campo('telefone')),
           'email' => mb_strtolower(campo('email')),
@@ -264,39 +276,59 @@ function lerAlunoDoPost(): array
           'responsavelNome' => mb_strtoupper(campo('responsavel_nome')),
           'responsavelCpf' => soDigitos(campo('responsavel_cpf')),
           'modalidades' => idsInteiros($_POST['modalidades'] ?? []),
-          'plano' => ctype_digit(campo('plano-pagamento')) ? (int) campo('plano-pagamento') : 0,
-          'frequencia' => ctype_digit(campo('frequencia-dias')) ? (int) campo('frequencia-dias') : 0,
-          'status' => ctype_digit(campo('status')) ? (int) campo('status') : 0,
+          'plano' => inteiroDoCampo('plano-pagamento'),
+          'frequencia' => inteiroDoCampo('frequencia-dias'),
+          'status' => inteiroDoCampo('status'),
+     ];
+}
+
+//idade em anos de uma data AAAA-MM-DD existente, nao futura e de no maximo 120 anos; null se invalida
+function idadeValida(string $data): ?int
+{
+     $nascimento = DateTime::createFromFormat('!Y-m-d', $data);
+     $hoje = new DateTime('today');
+     if (!$nascimento || $nascimento->format('Y-m-d') !== $data || $nascimento > $hoje) {
+          return null;
+     }
+     $idade = $nascimento->diff($hoje)->y;
+     return $idade <= 120 ? $idade : null;
+}
+
+function tamanhoEntre(string $texto, int $minimo, int $maximo): bool
+{
+     return mb_strlen($texto) >= $minimo && mb_strlen($texto) <= $maximo;
+}
+
+//regras do aluno (cadastro e edicao). A ordem dos erros e a ordem em que aparecem na mensagem da tela.
+function validarAluno(array $aluno): array
+{
+     $idade = idadeValida($aluno['dataNasc']);
+     $regras = [
+          'nome' => tamanhoEntre($aluno['nome'], 3, 100),
+          'telefone' => tamanhoEntre($aluno['telefone'], 10, 11),
+          'e-mail' => filter_var($aluno['email'], FILTER_VALIDATE_EMAIL) && strlen($aluno['email']) <= 100,
+          'CPF' => cpfValido($aluno['cpf']),
+          'data de nascimento' => $idade !== null,
+          'gênero' => in_array($aluno['genero'], ['M', 'F'], true),
+          'CEP' => strlen($aluno['cep']) === 8,
+          'endereço' => tamanhoEntre($aluno['endereco'], 1, 150),
+          'modalidade' => !empty($aluno['modalidades']),
+          'plano' => $aluno['plano'] > 0,
+          'frequência' => $aluno['frequencia'] > 0,
+          'status' => $aluno['status'] > 0,
      ];
 
-     $nascimento = DateTime::createFromFormat('!Y-m-d', $aluno['dataNasc']);
-     $idade = $nascimento ? $nascimento->diff(new DateTime('today'))->y : -1;
-
-     $erros = [];
-     if (mb_strlen($aluno['nome']) < 3 || mb_strlen($aluno['nome']) > 100) $erros[] = "nome";
-     if (strlen($aluno['telefone']) < 10 || strlen($aluno['telefone']) > 11) $erros[] = "telefone";
-     if (!filter_var($aluno['email'], FILTER_VALIDATE_EMAIL) || strlen($aluno['email']) > 100) $erros[] = "e-mail";
-     if (!cpfValido($aluno['cpf'])) $erros[] = "CPF";
-     if (!$nascimento || $nascimento->format('Y-m-d') !== $aluno['dataNasc'] || $nascimento > new DateTime('today') || $idade > 120) $erros[] = "data de nascimento";
-     if (!in_array($aluno['genero'], ['M', 'F'], true)) $erros[] = "gênero";
-     if (strlen($aluno['cep']) !== 8) $erros[] = "CEP";
-     if ($aluno['endereco'] === '' || mb_strlen($aluno['endereco']) > 150) $erros[] = "endereço";
-     if (empty($aluno['modalidades'])) $erros[] = "modalidade";
-     if ($aluno['plano'] <= 0) $erros[] = "plano";
-     if ($aluno['frequencia'] <= 0) $erros[] = "frequência";
-     if ($aluno['status'] <= 0) $erros[] = "status";
-
      //LGPD art. 14: menor de idade precisa de responsavel identificado
-     if ($idade >= 0 && $idade < 18) {
-          if (mb_strlen($aluno['responsavelNome']) < 3 || mb_strlen($aluno['responsavelNome']) > 100) $erros[] = "nome do responsável";
-          if (!cpfValido($aluno['responsavelCpf'])) $erros[] = "CPF do responsável";
+     if ($idade !== null && $idade < 18) {
+          $regras['nome do responsável'] = tamanhoEntre($aluno['responsavelNome'], 3, 100);
+          $regras['CPF do responsável'] = cpfValido($aluno['responsavelCpf']);
      } else {
-          //adulto: nao guardar dados de responsavel sem necessidade (minimizacao)
+          //adulto (ou data invalida): nao guardar dados de responsavel sem necessidade (minimizacao)
           $aluno['responsavelNome'] = '';
           $aluno['responsavelCpf'] = '';
      }
 
-     return [$aluno, $erros];
+     return [$aluno, array_keys(array_filter($regras, fn($valido) => !$valido))];
 }
 
 // ---------- Direitos do titular (LGPD art. 18) ----------

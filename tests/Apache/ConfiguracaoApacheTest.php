@@ -134,6 +134,21 @@ final class ConfiguracaoApacheTest extends TestCase
         $this->assertStringNotContainsString('C:\\xampp', $corpo);
     }
 
+    public function testSoGetPostEHeadSaoAceitos(): void
+    {
+        //"Proxy Disclosure" do ZAP usava OPTIONS/TRACE/TRACK para identificar o servidor
+        foreach (['OPTIONS', 'PUT', 'DELETE', 'PATCH', 'TRACE', 'TRACK', 'PROPFIND'] as $metodo) {
+            $curl = curl_init(self::base() . 'index.php');
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => $metodo, CURLOPT_NOBODY => false,
+                CURLOPT_SSL_VERIFYPEER => !getenv('GKT_TLS_INSEGURO'), CURLOPT_SSL_VERIFYHOST => getenv('GKT_TLS_INSEGURO') ? 0 : 2]);
+            curl_exec($curl);
+            $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+            curl_close($curl);
+            $this->assertContains($status, [403, 405, 501], "$metodo deveria ser recusado");
+        }
+        $this->assertSame(200, $this->get('index.php')['status']);
+    }
+
     // ---------- HTTPS (so quando o endereco testado e https, como no container) ----------
 
     private function exigirHttps(): void
@@ -159,6 +174,16 @@ final class ConfiguracaoApacheTest extends TestCase
         $c = $this->get('index.php')['cabecalhos'];
         $this->assertStringStartsWith('max-age=31536000', $c['strict-transport-security'][0] ?? '');
         $this->assertMatchesRegularExpression('/GKTSESSID=[^;]+;.*secure/i', implode("\n", $c['set-cookie'] ?? []));
+        $this->assertCount(1, $c['strict-transport-security'], 'HSTS sem duplicar');
+    }
+
+    public function testHstsTambemEmArquivosEErros(): void
+    {
+        $this->exigirHttps();
+        foreach (['ASSETS/CSS/loginStyle.css', 'favicon.png', 'sitemap.xml'] as $caminho) {
+            $c = $this->get($caminho)['cabecalhos'];
+            $this->assertSame(['max-age=31536000; includeSubDomains'], $c['strict-transport-security'] ?? [], $caminho);
+        }
     }
 
     public function testTlsAntigoEhRecusado(): void

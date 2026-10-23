@@ -4,6 +4,12 @@
 # Nao listar o conteudo das pastas
 Options -Indexes
 
+# O sistema so usa GET, POST e HEAD. PUT, DELETE, OPTIONS etc. sao recusados (menos superficie de ataque;
+# achado "Proxy Disclosure" do OWASP ZAP, que usava OPTIONS/TRACE para identificar o servidor)
+<LimitExcept GET POST HEAD>
+    Require all denied
+</LimitExcept>
+
 # Arquivos e pastas internos respondem 404, como se nao existissem:
 # .env, .git, .gitignore, .htaccess e qualquer outro arquivo oculto
 RedirectMatch 404 (?i)/\.
