@@ -39,7 +39,7 @@ final class ConfiguracaoApacheTest extends TestCase
             'vendor/autoload.php', 'composer.json', 'composer.lock', 'phpstan.neon', 'phpunit.xml',
             'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1', 'tests/carga/popular_volume.php',
             'docker/Dockerfile', 'docker/docker-compose.yml', 'docker/iniciar-banco.php', 'docker/.env.example', '.dockerignore',
-            'docker/backup.sh', 'docker/funcoes-banco.sh', 'docker/restaurar.sh',
+            'docker/backup.sh', 'docker/funcoes-banco.sh', 'docker/restaurar.sh', 'docker/copia-teste.sh',
         ]);
     }
 

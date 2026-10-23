@@ -1,18 +1,18 @@
 # Plano do OWASP ZAP (Automation Framework) para varrer o sistema LOGADO como administrador.
-# Rodado por docker/varredura-autenticada.sh, que faz o login, passa o cookie de sessao em ZAP_COOKIE
-# e no fim apaga o administrador temporario. So ataca o container "app" desta rede do Docker.
+# Rodado por docker/varredura-autenticada.sh, que faz o login e passa o cookie de sessao em ZAP_COOKIE.
+# So ataca a copia do sistema ligada ao banco de teste (docker/copia-teste.sh), nunca o container "app".
 env:
   contexts:
     - name: gkt
       urls:
-        - https://app/sistema.php
+        - https://gkt-app-teste/sistema.php
       includePaths:
-        - "https://app/.*"
+        - "https://gkt-app-teste/.*"
       excludePaths:
         # nao encerrar a sessao nem gerar bloqueio de login durante a varredura
-        - "https://app/logout\\.php.*"
-        - "https://app/BACKEND/CONTROLLER/actions\\.php.*"
-        - "https://app/index\\.php.*"
+        - "https://gkt-app-teste/logout\\.php.*"
+        - "https://gkt-app-teste/BACKEND/CONTROLLER/actions\\.php.*"
+        - "https://gkt-app-teste/index\\.php.*"
   parameters:
     failOnError: true
     progressToStdout: true
@@ -22,21 +22,21 @@ jobs:
   - type: replacer
     rules:
       - description: sessao do administrador temporario
-        url: "https://app/.*"
+        url: "https://gkt-app-teste/.*"
         matchType: req_header
         matchString: Cookie
         matchRegex: false
         replacementString: ${ZAP_COOKIE}
   - type: requestor
     requests:
-      - url: https://app/sistema.php?pagina=DASHBOARD
-      - url: https://app/sistema.php?pagina=ALUNOS
-      - url: https://app/sistema.php?pagina=TURMAS
-      - url: https://app/sistema.php?pagina=CADASTRAR
+      - url: https://gkt-app-teste/sistema.php?pagina=DASHBOARD
+      - url: https://gkt-app-teste/sistema.php?pagina=ALUNOS
+      - url: https://gkt-app-teste/sistema.php?pagina=TURMAS
+      - url: https://gkt-app-teste/sistema.php?pagina=CADASTRAR
   - type: spider
     parameters:
       context: gkt
-      url: https://app/sistema.php
+      url: https://gkt-app-teste/sistema.php
       maxDuration: 5
   - type: passiveScan-wait
     parameters:

@@ -51,9 +51,11 @@ C:\xampp\php\php.exe vendor\bin\phpunit
 Em Docker (Debian, detalhes em docker/README.md):
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d --build                       # sistema em http://127.0.0.1:8080
+bash docker/construir.sh && docker compose -f docker/docker-compose.yml up -d --wait app   # sistema em https://127.0.0.1:8443
 docker compose -f docker/docker-compose.yml --profile testes run --rm testes    # todos os testes
-docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap    # varredura OWASP ZAP
+bash docker/varredura.sh && bash docker/varredura-autenticada.sh                # OWASP ZAP sem e com login
+bash docker/teste-carga.sh && bash docker/teste-volume.sh                         # carga (k6) e volume
+bash docker/backup.sh                                                            # backup verificado
 ```
 
 Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAMPP escuta só em 127.0.0.1).

@@ -145,3 +145,14 @@ deixaria o sistema aberto em qualquer interface (VPN, Wi-Fi de visitantes).
 **Decisão:** `ENDERECO_APP` em `docker/.env`, padrão `127.0.0.1`. Para a recepção, o IP do servidor na rede local
 (`docker/README.md`, seção 8).
 **Consequências:** quem sobe o sistema pela primeira vez só acessa pelo próprio computador até decidir abrir.
+
+## D-017 — Varreduras, carga e volume atacam uma cópia ligada ao banco de teste
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** a revisão de segurança da branch apontou que a varredura ZAP logada e o teste de carga cadastravam e
+alteravam alunos no banco `gktgym` do container. No servidor da academia esse banco tem os dados reais; mesmo a
+varredura sem login enche a auditoria (que o sistema não pode apagar) de tentativas e pode bloquear administradores.
+**Decisão:** `docker/copia-teste.sh` recria o `gktgym_teste` e sobe `gkt-app-teste`, uma cópia do `app` ligada a
+ele, sem porta aberta; `varredura.sh`, `varredura-autenticada.sh`, `teste-carga.sh` e `teste-volume.sh` atacam só a
+cópia e a apagam no fim. O serviço `zap` do compose já aponta para ela.
+**Consequências:** D-014 (ZAP e carga a cada entrega) pode ser cumprida no próprio servidor de produção. Cada rodada
+recria o banco de teste do zero.

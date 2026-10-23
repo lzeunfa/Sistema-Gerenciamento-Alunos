@@ -2,9 +2,11 @@
 #
 #   bash docker/construir.sh && docker compose -f docker/docker-compose.yml up -d --wait app   https://127.0.0.1:8443
 #   docker compose -f docker/docker-compose.yml --profile testes run --rm testes      testes automatizados
-#   docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap      varredura OWASP ZAP (sem login)
+#   bash docker/varredura.sh                                                          varredura OWASP ZAP (sem login)
 #   bash docker/varredura-autenticada.sh                                              varredura OWASP ZAP (logada)
 #   bash docker/teste-carga.sh                                                        teste de carga (k6)
+#   bash docker/teste-volume.sh 20000                                                 teste de volume
+#   (ZAP, carga e volume atacam uma copia ligada ao banco gktgym_teste: docker/copia-teste.sh)
 #   bash docker/backup.sh                                                             backup verificado do banco
 #   bash docker/restaurar.sh <arquivo.bak> --confirmo-substituir                      restaura um backup
 #
@@ -78,27 +80,23 @@ services:
   zap:
     profiles: [seguranca]
     image: zaproxy/zap-stable   # imagem oficial do ZAP no Docker Hub (o ghcr.io nao responde em algumas redes)
-    # varredura ATIVA, apenas contra o container "app" desta rede (dados ficticios do banco gktgym)
-    command: ["zap-full-scan.py", "-t", "https://app/", "-r", "zap-relatorio.html", "-J", "zap-relatorio.json", "-I", "-m", "5"]
+    # varredura ATIVA, so contra a copia ligada ao banco de teste; rode por docker/varredura.sh, que sobe a copia
+    command: ["zap-full-scan.py", "-t", "https://gkt-app-teste/", "-r", "zap-relatorio.html", "-J", "zap-relatorio.json", "-I", "-m", "5"]
     user: root
     volumes:
       - ../relatorios:/zap/wrk:rw
-    depends_on:
-      app: { condition: service_healthy }
 
   carga:
     profiles: [carga]
-    # teste de carga (escalabilidade), rodado por docker/teste-carga.sh
+    # teste de carga (escalabilidade), rodado por docker/teste-carga.sh contra a copia ligada ao banco de teste
     image: grafana/k6:2.3.0
     environment:
-      BASE_URL: https://app
+      BASE_URL: https://gkt-app-teste
       K6_INSECURE_SKIP_TLS_VERIFY: "true"   # certificado autoassinado do container
     volumes:
       - ../tests/carga:/scripts:ro
       - ../relatorios:/relatorios:rw
     user: root
-    depends_on:
-      app: { condition: service_healthy }
 
 volumes:
   dados-sqlserver:

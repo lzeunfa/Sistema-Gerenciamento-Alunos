@@ -18,6 +18,7 @@ SQL Server Express), no banco de teste.
 | Testes automatizados | **251 passando dentro do container** no Debian (commit `1819013`); **293 passando no Windows** no commit atual. |
 | OWASP ZAP sem login | 3 varreduras completas: **0 falhas** (110, 139 e 140 verificações aprovadas). Avisos corrigidos a cada rodada. |
 | OWASP ZAP logado | ~10.500 requisições com sessão de administrador válida: **nenhum alerta High**; único Medium era "site sem HTTPS", já resolvido. |
+| Revisão do código | Toda a diferença da branch lida em busca de falhas: **nenhuma vulnerabilidade explorável**; 1 ponto operacional corrigido. |
 | Bugs achados | 4 corrigidos, cada um com teste: 2 entradas que derrubavam páginas (erro 500), paginação pesada e tabela de tentativas de login sem limite. |
 | Escalabilidade (volume) | Com **100 mil alunos** fictícios todas as telas abaixo de 0,7 s; com 20 mil, abaixo de 0,2 s. |
 | Manutenibilidade | Complexidade máxima de função **30 → 13**, média 3,1; análise estática (PHPStan) no nível 5 sem erros. |
@@ -66,11 +67,15 @@ comandos está na seção 9.
 | Comando | O que faz |
 |---|---|
 | `docker compose -f docker/docker-compose.yml --profile testes run --rm testes` | Roda todos os testes num banco separado (`gktgym_teste`), recriado do zero. Inclui os testes do Apache e do HTTPS contra o container `app`. |
-| `docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap` | Varredura OWASP ZAP **sem login** (como um atacante de fora). Relatório em `relatorios/`. |
-| `bash docker/varredura-autenticada.sh` | Varredura ZAP **logada**: limpa bloqueios de varreduras anteriores, cria um administrador temporário com senha aleatória, cadastra 2 alunos fictícios, faz login, passa o cookie de sessão para o ZAP e apaga o administrador no fim (mesmo se falhar). |
-| `bash docker/teste-carga.sh` | Teste de carga com k6 (até 30 pessoas simultâneas + pico de logins), com CPU/memória dos containers a cada 5 s. *Ainda não rodado.* |
-| `bash docker/teste-volume.sh 100000` | Enche o banco de **teste** com alunos fictícios e mede cada tela numa cópia do sistema sem porta aberta. *Ainda não rodado no container; medido no Windows (seção 6).* |
+| `bash docker/varredura.sh` | Varredura OWASP ZAP **sem login** (como um atacante de fora). Relatório em `relatorios/`. |
+| `bash docker/varredura-autenticada.sh` | Varredura ZAP **logada**: cria um administrador temporário com senha aleatória e 2 alunos fictícios, faz login, passa o cookie de sessão para o ZAP. |
+| `bash docker/teste-carga.sh` | Teste de carga com k6 (até 30 pessoas simultâneas + pico de logins), com CPU/memória a cada 5 s. *Ainda não rodado.* |
+| `bash docker/teste-volume.sh 100000` | Enche o banco de teste com alunos fictícios e mede cada tela. *Ainda não rodado no container; medido no Windows (seção 6).* |
 | `bash docker/backup.sh --testar-restauracao` | Backup verificado + restauração numa cópia temporária, comparando contagens. *Ainda não rodado no container.* |
+
+ZAP, carga e volume **não atacam o sistema de verdade**: cada script recria o banco `gktgym_teste` e sobe uma cópia
+do sistema ligada a ele, sem porta aberta (`docker/copia-teste.sh`), apagada no fim. Nas rodadas desta noite (antes
+dessa mudança) o alvo era o `app` com o banco `gktgym` do Docker, que só tinha dados fictícios.
 
 No Windows, os mesmos testes rodam com `pwsh tests/preparar_banco_teste.ps1` e `C:\xampp\php\php.exe vendor\bin\phpunit`.
 
@@ -142,6 +147,13 @@ redirecionadas; a sessão continuou válida até o fim. **Nenhum alerta High.**
 | HSTS ausente em arquivos estáticos e páginas de erro | Corrigido: HSTS em toda resposta HTTPS, inclusive erros (com teste). *Falta confirmar em nova varredura.* |
 | Proxy Disclosure | Corrigido: `TRACE` desligado (`TraceEnable Off`) e `OPTIONS` recusado (só GET, POST e HEAD). *Falta confirmar em nova varredura.* |
 | "Bypassing 403" | Mesmo falso positivo da 2ª rodada |
+
+### 4.6 Revisão de segurança do código (leitura, sem executar)
+Toda a diferença da branch para a `main` (controladores, telas, SQL, `.htaccess`, configuração, Docker, scripts e
+CI) foi lida procurando injeção de SQL e de comandos, XSS, CSRF, falhas de login/sessão, redirecionamento e cabeçalho
+injetáveis, vazamento de dados e segredos. **Nenhuma vulnerabilidade explorável encontrada.** Um ponto operacional foi
+corrigido: varredura logada e carga escreviam no banco `gktgym` do container, que no servidor da academia terá os
+dados reais; agora usam a cópia ligada ao banco de teste (seção 2.4).
 
 ## 5. Funcionalidade e robustez
 
@@ -229,12 +241,13 @@ cadastro e edição; o script antigo `DB/update_db.php`, incompatível com o ban
 cd ~/projetos/Sistema-Gerenciamento-Alunos && git pull
 bash docker/construir.sh && docker compose -f docker/docker-compose.yml up -d --wait app
 docker compose -f docker/docker-compose.yml --profile testes run --rm testes
-docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap
+bash docker/varredura.sh
 bash docker/varredura-autenticada.sh
 bash docker/teste-carga.sh
 bash docker/teste-volume.sh 100000
 bash docker/backup.sh --testar-restauracao
 docker compose -f docker/docker-compose.yml restart banco   # o sistema deve voltar sozinho em segundos
 ```
-Depois das varreduras e da carga, o banco do container fica com alunos fictícios. Para limpar (apaga só o banco do
-Docker): `docker compose -f docker/docker-compose.yml down -v` e suba de novo.
+**Antes de colocar dados reais no Docker do Debian**, apague o banco usado nas varreduras desta noite (ele tem alunos
+e administradores fictícios criados pelo ZAP): `docker compose -f docker/docker-compose.yml down -v` e suba de novo.
+Daqui em diante as varreduras usam o banco de teste e não deixam nada no `gktgym`.

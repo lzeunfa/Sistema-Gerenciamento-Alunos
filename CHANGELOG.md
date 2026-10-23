@@ -70,6 +70,8 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - No container o sistema só funciona em HTTPS (TLS 1.2/1.3, porta 8443), com HSTS e cookie de sessão `Secure`;
   quem abre por `http://` é redirecionado. Certificado gerado por instalação ou trocado por um real (`docker/README.md`).
 - Comentários de desenvolvimento não vão mais para o HTML enviado ao navegador.
+- Docker: varreduras ZAP (`docker/varredura.sh`, `docker/varredura-autenticada.sh`), carga e volume atacam uma
+  cópia do sistema ligada ao banco de teste; os dados e a auditoria do banco real não são tocados.
 
 ### Alterado
 - Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.

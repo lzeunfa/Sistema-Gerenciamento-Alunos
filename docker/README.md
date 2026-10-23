@@ -15,8 +15,9 @@ Roda o sistema igual em qualquer computador, sem instalar XAMPP, drivers nem SQL
 | `banco-init` | Roda a cada subida (`docker/iniciar-banco.php`): cria o banco (se não existir), aplica `DB/` e acerta o usuário `gkt_app`. |
 | `app` | PHP 8.2 + Apache + drivers, com as mesmas proteções do XAMPP, **só em HTTPS**: https://127.0.0.1:8443 |
 | `testes` | Só quando pedido: roda os testes automatizados num banco separado (`gktgym_teste`). |
-| `zap` | Só quando pedido: OWASP ZAP, varredura de segurança contra o `app`. |
+| `zap` | Só quando pedido: OWASP ZAP, varredura de segurança. |
 | `carga` | Só quando pedido: k6, teste de carga (muitas pessoas usando ao mesmo tempo). |
+| `gkt-app-teste` | Só durante ZAP, carga e volume: cópia do `app` ligada ao banco `gktgym_teste`, sem porta aberta (`docker/copia-teste.sh`). |
 
 O banco **não** fica exposto na rede; só os outros containers enxergam ele.
 
@@ -101,18 +102,18 @@ execução; o banco `gktgym` não é tocado. Para rodar só um grupo: acrescente
 ## 5. Teste de segurança (OWASP ZAP)
 
 O ZAP age como um atacante automático: navega pelo sistema e tenta injeção de SQL, XSS, falhas de cabeçalho,
-vazamento de informação, arquivos expostos etc. **Ele só ataca o container `app`**, dentro da rede do Docker.
+vazamento de informação, arquivos expostos etc.
 
-> Rode contra um banco **sem dados reais**. Depois de subir o ambiente pela primeira vez o banco `gktgym` só tem os
-> dados iniciais fictícios. Nunca aponte o ZAP para um sistema que não é seu.
+**O ZAP nunca ataca o sistema de verdade.** Os scripts recriam o banco `gktgym_teste` do zero e sobem uma cópia
+do sistema ligada a ele, sem porta aberta, só dentro da rede do Docker. Assim dá para rodar no servidor da academia
+sem tocar nos dados reais, sem encher a auditoria de tentativas de login e sem bloquear administradores.
 
 Sem login (como um atacante de fora):
 ```bash
-mkdir -p relatorios
-docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap
+bash docker/varredura.sh
 ```
 Logado como administrador (telas internas: cadastro, edição, exportação, exclusão). Cria um administrador
-temporário com senha aleatória e apaga no fim; **cadastra e altera alunos fictícios** no banco do container:
+temporário com senha aleatória e alunos fictícios no banco de teste, entra e passa a sessão para o ZAP:
 ```bash
 bash docker/varredura-autenticada.sh
 ```
@@ -125,14 +126,14 @@ recomendações. Mande o JSON (ou cole os alertas High/Medium) para revisão.
 ## 6. Escalabilidade: carga e volume
 
 **Carga** (muitas pessoas usando ao mesmo tempo): o k6 simula até 30 pessoas na recepção usando o sistema e um
-pico de logins. Cria um administrador temporário e **cadastra alunos fictícios** no banco do container:
+pico de logins. Cadastra alunos durante o teste, por isso também usa a cópia ligada ao banco de teste:
 ```bash
 bash docker/teste-carga.sh
 ```
 Resumo em `relatorios/carga-resumo.json` e uso de CPU/memória em `relatorios/carga-recursos.csv`.
 
-**Volume** (muitos alunos no banco): enche o banco de **teste** com alunos fictícios e mede cada tela. Sobe uma
-cópia temporária do sistema ligada ao `gktgym_teste`; o `gktgym` não é tocado:
+**Volume** (muitos alunos no banco): enche o banco de **teste** com alunos fictícios e mede cada tela na cópia;
+o `gktgym` não é tocado:
 ```bash
 bash docker/teste-volume.sh 20000
 ```
