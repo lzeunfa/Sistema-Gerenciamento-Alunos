@@ -156,6 +156,10 @@ correção:
 | Paginação desenhava um botão por página | Com 20 mil alunos: 500 botões e 251 KB por tela | No máximo 9 botões; página além da última cai na última |
 | Tabela de tentativas de login sem limite | Sob ataque prolongado o banco crescia para sempre | Tentativas com mais de 1 dia são apagadas a cada erro de login |
 
+A paginação nova também foi conferida no navegador, numa cópia local ligada ao banco de teste com 600 alunos
+fictícios: no máximo 9 botões ("1 2 3 … 16"), o filtro continua ao trocar de página, a última página mostra só o
+que sobra e `p=999` cai na última; igual em Turmas.
+
 Em rodadas anteriores os testes já tinham achado: aluno cadastrado como INATIVO sem data de inativação, erro de
 modalidade aparecendo como "CPF duplicado" e matrícula com quebra de linha passando pela validação.
 
@@ -215,7 +219,8 @@ cadastro e edição; o script antigo `DB/update_db.php`, incompatível com o ban
    lugar, criptografada.
 6. **Regras de negócio para confirmar:** aluno sem inscrição não aparece nas listas (correto?); regra de numeração
    da matrícula; situação "Atrasado" depois do dia 10; planos fora do Notion (Mensal?); frequências 1x e 5x no
-   filtro de Alunos.
+   filtro de Alunos; o cartão "Lucro bruto" do dashboard mostra o texto fixo `R$ NUM` (vem do código original e os
+   planos não têm preço cadastrado): remover o cartão ou cadastrar o valor de cada plano?
 7. **`DB/script.sql`** tem dados pessoais de exemplo num repositório público: confirmar se são fictícios.
 
 ## 9. Quando o Debian voltar: comandos que faltam (na ordem)
