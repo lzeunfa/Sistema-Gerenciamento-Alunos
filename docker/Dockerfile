@@ -5,19 +5,26 @@
 # ---------- base: PHP, Apache e drivers ----------
 FROM php:8.2-apache-bookworm AS base
 
-# Driver ODBC 18 e sqlcmd da Microsoft (repositorio oficial para Debian 12)
+# downloads tolerantes a rede instavel (Wi-Fi); docker/construir.sh constroi com a rede do host
+# porque em alguns provedores os servidores da Microsoft so respondem por IPv6
+RUN printf 'Acquire::Retries "5";\n' > /etc/apt/apt.conf.d/80-rede-gkt \
+ && printf 'retry = 5\nretry-delay = 3\nretry-all-errors\n' > /root/.curlrc
+
+# Driver ODBC 18 da Microsoft (o banco e preparado pelo PHP, sem sqlcmd: menos pacotes na imagem)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends gnupg curl ca-certificates unixodbc-dev \
  && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
  && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list -o /etc/apt/sources.list.d/mssql-release.list \
  && apt-get update \
- && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 mssql-tools18 \
- && pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0 \
+ && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
+ # baixa o pacote pelo link direto: em algumas redes a consulta de versoes do pecl (/rest) falha
+ && curl -fsSL -o /tmp/sqlsrv.tgz https://pecl.php.net/get/sqlsrv-5.12.0.tgz \
+ && curl -fsSL -o /tmp/pdo_sqlsrv.tgz https://pecl.php.net/get/pdo_sqlsrv-5.12.0.tgz \
+ && pecl install /tmp/sqlsrv.tgz /tmp/pdo_sqlsrv.tgz \
+ && rm -f /tmp/sqlsrv.tgz /tmp/pdo_sqlsrv.tgz \
  && docker-php-ext-enable sqlsrv pdo_sqlsrv \
  && apt-get purge -y --auto-remove gnupg \
  && rm -rf /var/lib/apt/lists/* /tmp/pear
-
-ENV PATH="${PATH}:/opt/mssql-tools18/bin"
 
 # PHP de producao + endurecimento (mesmas regras do php.ini do XAMPP, ver DOC/SEGURANCA_LGPD.md)
 RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
@@ -34,7 +41,11 @@ WORKDIR /var/www/html
 FROM composer:2 AS dependencias-dev
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-progress --no-scripts --prefer-dist
+# ate 5 tentativas: em rede instavel algum download do GitHub pode falhar (os ja baixados ficam no cache)
+RUN for tentativa in 1 2 3 4 5; do \
+      composer install --no-interaction --no-progress --no-scripts --prefer-dist && exit 0; \
+      echo "composer falhou (tentativa $tentativa), tentando de novo..."; sleep 5; \
+    done; exit 1
 
 # ---------- producao ----------
 FROM base AS producao
@@ -43,13 +54,11 @@ COPY . /var/www/html
 RUN rm -rf tests phpunit.xml phpstan.neon .github \
  && chown -R root:www-data /var/www/html \
  && find /var/www/html -type d -exec chmod 750 {} + \
- && find /var/www/html -type f -exec chmod 640 {} + \
- && chmod 750 docker/*.sh
+ && find /var/www/html -type f -exec chmod 640 {} +
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsS -o /dev/null http://127.0.0.1/index.php || exit 1
 
 # ---------- testes ----------
 FROM base AS testes
 COPY . /var/www/html
 COPY --from=dependencias-dev /app/vendor /var/www/html/vendor
-RUN chmod +x docker/*.sh tests/*.sh
 CMD ["bash", "tests/rodar_testes_container.sh"]

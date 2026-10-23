@@ -3,5 +3,5 @@
 # Recria o banco gktgym_teste do zero e passa os argumentos para o PHPUnit (ex.: --testsuite unidade).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-bash docker/iniciar-banco.sh gktgym_teste --recriar
+php docker/iniciar-banco.php gktgym_teste --recriar
 exec vendor/bin/phpunit "$@"

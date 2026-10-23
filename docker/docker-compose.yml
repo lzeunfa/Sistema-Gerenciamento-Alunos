@@ -23,7 +23,7 @@ services:
   banco-init:
     build: { context: .., dockerfile: docker/Dockerfile, target: producao }
     image: gkt-app:producao
-    command: ["bash", "docker/iniciar-banco.sh"]
+    command: ["php", "docker/iniciar-banco.php"]
     environment: &banco-env
       DB_CONNECTION: sqlsrv
       DB_HOST: banco
@@ -38,6 +38,7 @@ services:
 
   app:
     image: gkt-app:producao
+    pull_policy: never   # imagem construida localmente pelo servico banco-init
     environment:
       DB_CONNECTION: sqlsrv
       DB_HOST: banco
