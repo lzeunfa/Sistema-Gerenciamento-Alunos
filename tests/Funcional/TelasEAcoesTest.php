@@ -46,6 +46,8 @@ final class TelasEAcoesTest extends TesteFuncional
         foreach ($paginas as $pagina) {
             $html = str_starts_with($pagina, 'sistema') ? $this->nav->get($pagina)['corpo'] : (new Navegador())->get($pagina)['corpo'];
             $this->assertStringNotContainsString('<!--', $html, $pagina);
+            //a CSP bloqueia script inline: toda tag <script> precisa de src (regra do CLAUDE.md)
+            $this->assertDoesNotMatchRegularExpression('/<script(?![^>]*\ssrc=)[^>]*>/i', $html, "$pagina: <script> sem src");
         }
     }
 

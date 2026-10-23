@@ -34,8 +34,6 @@ $nomePagina = strtolower($pagina);
     <?php /* css alunos */ ?>
     <link rel="stylesheet" href="ASSETS/CSS/cadastrar.css">
 
-    <script></script>
-
     <?php /* media querie css */ ?>
     <link rel="stylesheet" href="ASSETS/CSS/mq.css">
 
