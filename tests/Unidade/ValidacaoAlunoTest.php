@@ -86,6 +86,54 @@ final class ValidacaoAlunoTest extends TestCase
         $this->assertSame('', campo('inexistente'));
     }
 
+    // ---------- filtroAlunos (telas Alunos e Turmas) ----------
+
+    public function testFiltrosConhecidosViramClausulaFixa(): void
+    {
+        $this->assertSame([" WHERE S.STATUSALU = 'PAGO' ", []], filtroAlunos('alunos_pagos'));
+        $this->assertSame([" WHERE O.OPCAO LIKE '%3X%' ", []], filtroAlunos('plano_3'));
+    }
+
+    public function testModalidadeVaiComoParametroENaoNoTextoDoSql(): void
+    {
+        [$where, $parametros] = filtroAlunos('4');
+        $this->assertStringNotContainsString('4', $where);
+        $this->assertSame([':modalidade' => 4], $parametros);
+    }
+
+    public function testFiltroDesconhecidoOuMaliciosoNaoFiltraNada(): void
+    {
+        foreach (['', 'qualquer', "1 OR 1=1", "1; DROP TABLE ALUNOS", '1.5', '-1', ' 1', ['1'], null] as $filtro) {
+            $this->assertSame(['', []], filtroAlunos($filtro), json_encode($filtro));
+        }
+    }
+
+    // ---------- paginacao ----------
+
+    public function testPaginaDaUrlAceitaSoInteirosPositivos(): void
+    {
+        $this->assertSame(3, paginaDaUrl('3'));
+        foreach ([null, '', '0', '-2', '2.5', 'abc', ['2'], ' 2'] as $ruim) {
+            $this->assertSame(1, paginaDaUrl($ruim), json_encode($ruim));
+        }
+    }
+
+    public function testPaginasVisiveisMostraPrimeiraUltimaEVizinhas(): void
+    {
+        $this->assertSame([], paginasVisiveis(1, 1), 'uma pagina so: sem botoes');
+        $this->assertSame([1, 2], paginasVisiveis(1, 2));
+        $this->assertSame([1, 2, 3, 4, 5], paginasVisiveis(3, 5));
+        $this->assertSame([1, null, 48, 49, 50, 51, 52, null, 500], paginasVisiveis(50, 500));
+        $this->assertSame([1, 2, 3, null, 500], paginasVisiveis(1, 500));
+        $this->assertSame([1, null, 498, 499, 500], paginasVisiveis(500, 500));
+    }
+
+    public function testPaginasVisiveisTemTamanhoLimitadoComMuitasPaginas(): void
+    {
+        //com 1 milhao de alunos (25 mil paginas) a tela continua com no maximo 9 itens
+        $this->assertLessThanOrEqual(9, count(paginasVisiveis(12345, 25000)));
+    }
+
     // ---------- lerAlunoDoPost ----------
 
     private function postValido(array $mudancas = []): array

@@ -65,6 +65,12 @@ Pré-requisitos:
    ```bash
    sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_seguranca.sql
    ```
+   ```bash
+   sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_direitos_titular.sql
+   ```
+   ```bash
+   sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_desempenho.sql
+   ```
    Depois crie o usuário do sistema no banco e rode os comandos de **PERMISSÕES** do final de `DB/migracao_seguranca.sql`.
 4. Copie `.env.example` para `.env` e preencha usuário e senha do banco.
 5. Crie seu administrador (a senha é pedida no terminal, mínimo de 12 caracteres):

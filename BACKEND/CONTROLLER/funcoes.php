@@ -58,9 +58,19 @@ function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep
           return false;
      }
 }
+//precisa ser chamada dentro da transacao do cadastro
 function gerarProximaMatricula($pdo)
 {
-     $sqlMat = "SELECT MAX(CAST(ALUMATRICULA AS INT)) AS maior_matricula FROM ALUNOS";
+     //dois cadastros ao mesmo tempo liam o mesmo MAX e o segundo falhava com matricula duplicada (achado no teste
+     //de carga). A trava de aplicacao enfileira so os cadastros, ate o commit/rollback; as telas de consulta nao esperam
+     $trava = $pdo->query("SET NOCOUNT ON; DECLARE @r INT;
+          EXEC @r = sp_getapplock @Resource = 'gkt_proxima_matricula', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000;
+          SELECT @r")->fetchColumn();
+     if ((int) $trava < 0) {
+          throw new PDOException("trava da proxima matricula nao obtida (codigo $trava)");
+     }
+     //TRY_CAST: uma matricula com letras (matriculaValida aceita) nao pode derrubar todos os cadastros
+     $sqlMat = "SELECT MAX(TRY_CAST(ALUMATRICULA AS INT)) AS maior_matricula FROM ALUNOS";
      $stmt = $pdo->query($sqlMat);
      $fetch = $stmt->fetch();
      $ultima_matricula = $fetch['maior_matricula'];
@@ -119,133 +129,138 @@ function listarStatus()
      $status = $stmt->fetchAll(PDO::FETCH_ASSOC);
      return $status;
 }
-function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
-{
-     $pdo = Database::getConexao();
-
-     // 1. Iniciamos a variável vazia
-     $clausulaWhere = "";
-
-     // 2. Preenchemos a regra de acordo com o que veio da tela
-     if (is_numeric($filtro)) {
-          // Filtro por ID da modalidade
-          $clausulaWhere = " WHERE I.ALUNOMOD = " . intval($filtro) . " ";
-     } else {
-          switch ($filtro) {
-               case 'alunos_pendentes':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PENDENTE' ";
-                    break;
-               case 'alunos_pagos':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PAGO' ";
-                    break;
-               case 'alunos_homens':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'M' ";
-                    break;
-               case 'alunos_mulheres':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'F' ";
-                    break;
-               case 'plano_2':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%2X%' ";
-                    break;
-               case 'plano_3':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%3X%' ";
-                    break;
-               case 'plano_4':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%4X%' ";
-                    break;
-          }
-     }
-
-     // 3. Colocamos o $clausulaWhere ANTES do GROUP BY no SQL
-     $sql = "SELECT 
-                 A.ALUMATRICULA, 
-                 A.DATACADASTRO,
-                 A.ALUNOME, 
-                 A.ALUCPF, 
-                 STRING_AGG(M.NOMEMOD, ', ') AS ARTES, 
-                 P.PLANO, 
-                 O.OPCAO AS FREQUENCIA,
-                 S.STATUSALU AS SITUACAO,
-                 A.ALUANONIMIZADO
-                          FROM ALUNOS A
+//junta aluno, inscricoes e tabelas de apoio; usado pela lista e pela contagem (as duas precisam bater)
+const FROM_ALUNOS_COMPLETOS = "FROM ALUNOS A
              INNER JOIN ALUNOS_INSCRICAO I ON A.ALUMATRICULA = I.ALUNOMAT
              INNER JOIN MODALIDADES M ON I.ALUNOMOD = M.MODALIDADECOD
              INNER JOIN PLANOS P ON I.ALUNOPLANO = P.PLANOCOD
              INNER JOIN ALUNOS_STATUS S ON A.ALUSTATUS = S.STATUSCOD
-             INNER JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD
-             
-             $clausulaWhere 
-             
-             GROUP BY 
+             INNER JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD";
+
+//filtros das telas Alunos e Turmas. Lista fixa (whitelist): texto desconhecido = sem filtro.
+//Numero = codigo da modalidade (tela Turmas), passado como parametro.
+//Devolve [clausula WHERE, parametros]. $sufixo diferencia o parametro quando o filtro aparece duas vezes no SQL.
+function filtroAlunos($filtro, string $sufixo = ""): array
+{
+     if (is_string($filtro) && ctype_digit($filtro)) {
+          return [" WHERE I.ALUNOMOD = :modalidade$sufixo ", [":modalidade$sufixo" => (int) $filtro]];
+     }
+     $filtros = [
+          'alunos_pendentes' => "S.STATUSALU = 'PENDENTE'",
+          'alunos_pagos' => "S.STATUSALU = 'PAGO'",
+          'alunos_homens' => "A.ALUSEX = 'M'",
+          'alunos_mulheres' => "A.ALUSEX = 'F'",
+          'plano_2' => "O.OPCAO LIKE '%2X%'",
+          'plano_3' => "O.OPCAO LIKE '%3X%'",
+          'plano_4' => "O.OPCAO LIKE '%4X%'",
+     ];
+     return is_string($filtro) && isset($filtros[$filtro]) ? [" WHERE {$filtros[$filtro]} ", []] : ["", []];
+}
+
+function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
+{
+     $pdo = Database::getConexao();
+     [$clausulaWhere, $parametros] = filtroAlunos($filtro);
+     $paginar = $limite !== null && $offset !== null;
+
+     //com paginacao, escolhe primeiro as matriculas da pagina e so depois monta as colunas (STRING_AGG etc.)
+     //dessas poucas: com 100 mil alunos o tempo nao cresce com o tamanho da tabela inteira
+     $pagina = "";
+     if ($paginar) {
+          [$wherePagina, $parametrosPagina] = filtroAlunos($filtro, '_pagina');
+          $parametros += $parametrosPagina;
+          $pagina = "INNER JOIN (
+                    SELECT A.ALUMATRICULA " . FROM_ALUNOS_COMPLETOS . " $wherePagina
+                    GROUP BY A.ALUMATRICULA
+                    ORDER BY A.ALUMATRICULA DESC
+                    OFFSET :offset ROWS FETCH NEXT :limite ROWS ONLY
+               ) PG ON PG.ALUMATRICULA = A.ALUMATRICULA";
+     }
+
+     $sql = "SELECT
+                 A.ALUMATRICULA,
+                 A.DATACADASTRO,
+                 A.ALUNOME,
+                 A.ALUCPF,
+                 STRING_AGG(M.NOMEMOD, ', ') AS ARTES,
+                 P.PLANO,
+                 O.OPCAO AS FREQUENCIA,
+                 S.STATUSALU AS SITUACAO,
+                 A.ALUANONIMIZADO
+             " . FROM_ALUNOS_COMPLETOS . "
+             $pagina
+             $clausulaWhere
+             GROUP BY
                  A.ALUMATRICULA, A.DATACADASTRO, A.ALUNOME, A.ALUCPF, P.PLANO, O.OPCAO, S.STATUSALU, A.ALUANONIMIZADO
              ORDER BY A.ALUMATRICULA DESC";
 
-     if ($limite !== null && $offset !== null) {
-          $sql .= " OFFSET :offset ROWS FETCH NEXT :limite ROWS ONLY";
-     }
-
      $stmt = $pdo->prepare($sql);
-
-     if ($limite !== null && $offset !== null) {
+     foreach ($parametros as $nome => $valor) {
+          $stmt->bindValue($nome, $valor, PDO::PARAM_INT);
+     }
+     if ($paginar) {
           $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
           $stmt->bindValue(':limite', (int)$limite, PDO::PARAM_INT);
      }
-
      $stmt->execute();
-
-     // O FETCH_ASSOC transforma os dados em um array associativo
-     $alunos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-     return $alunos;
+     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function contarAlunosCompletos($filtro = "")
 {
      $pdo = Database::getConexao();
-     $clausulaWhere = "";
+     [$clausulaWhere, $parametros] = filtroAlunos($filtro);
 
-     if (is_numeric($filtro)) {
-          $clausulaWhere = " WHERE I.ALUNOMOD = " . intval($filtro) . " ";
-     } else {
-          switch ($filtro) {
-               case 'alunos_pendentes':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PENDENTE' ";
-                    break;
-               case 'alunos_pagos':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PAGO' ";
-                    break;
-               case 'alunos_homens':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'M' ";
-                    break;
-               case 'alunos_mulheres':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'F' ";
-                    break;
-               case 'plano_2':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%2X%' ";
-                    break;
-               case 'plano_3':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%3X%' ";
-                    break;
-               case 'plano_4':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%4X%' ";
-                    break;
-          }
+     $stmt = $pdo->prepare("SELECT COUNT(DISTINCT A.ALUMATRICULA) AS total " . FROM_ALUNOS_COMPLETOS . " $clausulaWhere");
+     foreach ($parametros as $nome => $valor) {
+          $stmt->bindValue($nome, $valor, PDO::PARAM_INT);
      }
-
-     $sql = "SELECT COUNT(DISTINCT A.ALUMATRICULA) AS total
-             FROM ALUNOS A
-             INNER JOIN ALUNOS_INSCRICAO I ON A.ALUMATRICULA = I.ALUNOMAT
-             INNER JOIN MODALIDADES M ON I.ALUNOMOD = M.MODALIDADECOD
-             INNER JOIN PLANOS P ON I.ALUNOPLANO = P.PLANOCOD
-             INNER JOIN ALUNOS_STATUS S ON A.ALUSTATUS = S.STATUSCOD
-             INNER JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD
-             $clausulaWhere";
-
-     $stmt = $pdo->prepare($sql);
      $stmt->execute();
      $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-     
      return $resultado ? (int)$resultado['total'] : 0;
 }
+
+// ---------- Paginacao das telas Alunos e Turmas ----------
+
+//numero da pagina vindo da URL (?p=): so inteiros positivos; qualquer outra coisa vira 1
+function paginaDaUrl($valor): int
+{
+     return is_string($valor) && ctype_digit($valor) && (int) $valor > 0 ? (int) $valor : 1;
+}
+
+//numeros de pagina para os botoes: a primeira, a ultima e $raio de cada lado da atual;
+//null marca um salto ("..."). Ex.: atual 50 de 500 -> [1, null, 48, 49, 50, 51, 52, null, 500]
+function paginasVisiveis(int $atual, int $total, int $raio = 2): array
+{
+     if ($total <= 1) {
+          return [];
+     }
+     $paginas = array_unique(array_merge([1, $total], range(max(1, $atual - $raio), min($total, $atual + $raio))));
+     sort($paginas);
+     $resultado = [];
+     foreach ($paginas as $i => $pagina) {
+          if ($i > 0 && $pagina - $paginas[$i - 1] > 1) {
+               $resultado[] = null;
+          }
+          $resultado[] = $pagina;
+     }
+     return $resultado;
+}
+
+//dados de uma pagina da lista de alunos; pagina alem da ultima cai na ultima
+function dadosListagem($filtro, $paginaPedida, int $porPagina = 40): array
+{
+     $total = contarAlunosCompletos($filtro);
+     $totalPaginas = max(1, (int) ceil($total / $porPagina));
+     $pagina = min(paginaDaUrl($paginaPedida), $totalPaginas);
+     return [
+          'alunos' => listarAlunosCompletos($filtro, $porPagina, ($pagina - 1) * $porPagina),
+          'pagina' => $pagina,
+          'totalPaginas' => $totalPaginas,
+          'total' => $total,
+     ];
+}
+
 // ---------- Validacao dos dados do aluno (cadastro e edicao usam as mesmas regras) ----------
 
 //le um campo de texto do POST; arrays e outros tipos viram texto vazio
@@ -301,7 +316,19 @@ function matriculaValida($matricula): ?string
 //le e valida os dados do formulario de aluno; devolve [dados, lista de campos com erro]
 function lerAlunoDoPost(): array
 {
-     $aluno = [
+     return validarAluno(normalizarAlunoDoPost());
+}
+
+//numero inteiro positivo vindo de um campo do formulario (0 se nao for numero)
+function inteiroDoCampo(string $nome): int
+{
+     return ctype_digit(campo($nome)) ? (int) campo($nome) : 0;
+}
+
+//le o formulario e padroniza: maiusculas no nome, so digitos em CPF/telefone/CEP, codigos inteiros
+function normalizarAlunoDoPost(): array
+{
+     return [
           'nome' => mb_strtoupper(campo('nome')),
           'telefone' => soDigitos(campo('telefone')),
           'email' => mb_strtolower(campo('email')),
@@ -313,39 +340,59 @@ function lerAlunoDoPost(): array
           'responsavelNome' => mb_strtoupper(campo('responsavel_nome')),
           'responsavelCpf' => soDigitos(campo('responsavel_cpf')),
           'modalidades' => idsInteiros($_POST['modalidades'] ?? []),
-          'plano' => ctype_digit(campo('plano-pagamento')) ? (int) campo('plano-pagamento') : 0,
-          'frequencia' => ctype_digit(campo('frequencia-dias')) ? (int) campo('frequencia-dias') : 0,
-          'status' => ctype_digit(campo('status')) ? (int) campo('status') : 0,
+          'plano' => inteiroDoCampo('plano-pagamento'),
+          'frequencia' => inteiroDoCampo('frequencia-dias'),
+          'status' => inteiroDoCampo('status'),
+     ];
+}
+
+//idade em anos de uma data AAAA-MM-DD existente, nao futura e de no maximo 120 anos; null se invalida
+function idadeValida(string $data): ?int
+{
+     $nascimento = DateTime::createFromFormat('!Y-m-d', $data);
+     $hoje = new DateTime('today');
+     if (!$nascimento || $nascimento->format('Y-m-d') !== $data || $nascimento > $hoje) {
+          return null;
+     }
+     $idade = $nascimento->diff($hoje)->y;
+     return $idade <= 120 ? $idade : null;
+}
+
+function tamanhoEntre(string $texto, int $minimo, int $maximo): bool
+{
+     return mb_strlen($texto) >= $minimo && mb_strlen($texto) <= $maximo;
+}
+
+//regras do aluno (cadastro e edicao). A ordem dos erros e a ordem em que aparecem na mensagem da tela.
+function validarAluno(array $aluno): array
+{
+     $idade = idadeValida($aluno['dataNasc']);
+     $regras = [
+          'nome' => tamanhoEntre($aluno['nome'], 3, 100),
+          'telefone' => tamanhoEntre($aluno['telefone'], 10, 11),
+          'e-mail' => filter_var($aluno['email'], FILTER_VALIDATE_EMAIL) && strlen($aluno['email']) <= 100,
+          'CPF' => cpfValido($aluno['cpf']),
+          'data de nascimento' => $idade !== null,
+          'gênero' => in_array($aluno['genero'], ['M', 'F'], true),
+          'CEP' => strlen($aluno['cep']) === 8,
+          'endereço' => tamanhoEntre($aluno['endereco'], 1, 150),
+          'modalidade' => !empty($aluno['modalidades']),
+          'plano' => $aluno['plano'] > 0,
+          'frequência' => $aluno['frequencia'] > 0,
+          'status' => $aluno['status'] > 0,
      ];
 
-     $nascimento = DateTime::createFromFormat('!Y-m-d', $aluno['dataNasc']);
-     $idade = $nascimento ? $nascimento->diff(new DateTime('today'))->y : -1;
-
-     $erros = [];
-     if (mb_strlen($aluno['nome']) < 3 || mb_strlen($aluno['nome']) > 100) $erros[] = "nome";
-     if (strlen($aluno['telefone']) < 10 || strlen($aluno['telefone']) > 11) $erros[] = "telefone";
-     if (!filter_var($aluno['email'], FILTER_VALIDATE_EMAIL) || strlen($aluno['email']) > 100) $erros[] = "e-mail";
-     if (!cpfValido($aluno['cpf'])) $erros[] = "CPF";
-     if (!$nascimento || $nascimento->format('Y-m-d') !== $aluno['dataNasc'] || $nascimento > new DateTime('today') || $idade > 120) $erros[] = "data de nascimento";
-     if (!in_array($aluno['genero'], ['M', 'F'], true)) $erros[] = "gênero";
-     if (strlen($aluno['cep']) !== 8) $erros[] = "CEP";
-     if ($aluno['endereco'] === '' || mb_strlen($aluno['endereco']) > 150) $erros[] = "endereço";
-     if (empty($aluno['modalidades'])) $erros[] = "modalidade";
-     if ($aluno['plano'] <= 0) $erros[] = "plano";
-     if ($aluno['frequencia'] <= 0) $erros[] = "frequência";
-     if ($aluno['status'] <= 0) $erros[] = "status";
-
      //LGPD art. 14: menor de idade precisa de responsavel identificado
-     if ($idade >= 0 && $idade < 18) {
-          if (mb_strlen($aluno['responsavelNome']) < 3 || mb_strlen($aluno['responsavelNome']) > 100) $erros[] = "nome do responsável";
-          if (!cpfValido($aluno['responsavelCpf'])) $erros[] = "CPF do responsável";
+     if ($idade !== null && $idade < 18) {
+          $regras['nome do responsável'] = tamanhoEntre($aluno['responsavelNome'], 3, 100);
+          $regras['CPF do responsável'] = cpfValido($aluno['responsavelCpf']);
      } else {
-          //adulto: nao guardar dados de responsavel sem necessidade (minimizacao)
+          //adulto (ou data invalida): nao guardar dados de responsavel sem necessidade (minimizacao)
           $aluno['responsavelNome'] = '';
           $aluno['responsavelCpf'] = '';
      }
 
-     return [$aluno, $erros];
+     return [$aluno, array_keys(array_filter($regras, fn($valido) => !$valido))];
 }
 
 // ---------- Direitos do titular (LGPD art. 18) ----------

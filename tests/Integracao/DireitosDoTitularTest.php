@@ -75,7 +75,8 @@ final class DireitosDoTitularTest extends TesteComBanco
         Database::getConexao()->exec("UPDATE ALUNOS SET ALUCIENCIAPRIVACIDADE = NULL WHERE ALUMATRICULA = '$matricula'");
 
         atualizarAluno($matricula, $this->alunoValido(), false);
-        $this->assertNull($this->linhaAluno($matricula)['ALUCIENCIAPRIVACIDADE']);
+        $semCiencia = $this->linhaAluno($matricula)['ALUCIENCIAPRIVACIDADE'];
+        $this->assertNull($semCiencia);
 
         atualizarAluno($matricula, $this->alunoValido(), true);
         $primeira = $this->linhaAluno($matricula)['ALUCIENCIAPRIVACIDADE'];

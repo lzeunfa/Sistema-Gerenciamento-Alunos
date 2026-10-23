@@ -5,20 +5,27 @@ use PHPUnit\Framework\TestCase;
 //Regras do .htaccess e configuracao do Apache do XAMPP. So faz leituras (GET), nao altera dados.
 final class ConfiguracaoApacheTest extends TestCase
 {
-    private const BASE = 'http://localhost/Gkt/Sistema-Gerenciamento-Alunos/';
+    //XAMPP: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/  |  Docker: GKT_URL_APACHE=http://app/
+    private static function base(): string
+    {
+        return rtrim(getenv('GKT_URL_APACHE') ?: 'http://localhost/Gkt/Sistema-Gerenciamento-Alunos/', '/') . '/';
+    }
 
     public static function setUpBeforeClass(): void
     {
-        $socket = @fsockopen('127.0.0.1', 80, $errno, $errstr, 1);
+        $url = parse_url(self::base());
+        //no Windows "localhost" pode virar ::1 (IPv6) e o Apache do XAMPP so escuta em 127.0.0.1
+        $host = $url['host'] === 'localhost' ? '127.0.0.1' : $url['host'];
+        $socket = @fsockopen($host, $url['port'] ?? ($url['scheme'] === 'https' ? 443 : 80), $errno, $errstr, 1);
         if (!$socket) {
-            self::markTestSkipped('Apache do XAMPP não está rodando na porta 80.');
+            self::markTestSkipped('Apache não está respondendo em ' . self::base());
         }
         fclose($socket);
     }
 
     private function get(string $caminho): array
     {
-        return (new Navegador())->get($caminho, self::BASE);
+        return (new Navegador())->get($caminho, self::base());
     }
 
     public static function arquivosInternos(): array
@@ -30,7 +37,9 @@ final class ConfiguracaoApacheTest extends TestCase
             'BACKEND/CONNECTION/config.php', 'BACKEND/SEGURANCA/seguranca.php', 'BACKEND/CONTROLLER/funcoes.php',
             'ASSETS/PAGINAS/ALUNOS.php', 'ASSETS/PAGINAS/_acoesAluno.php', 'trava.php',
             'vendor/autoload.php', 'composer.json', 'composer.lock', 'phpstan.neon', 'phpunit.xml',
-            'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1',
+            'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1', 'tests/carga/popular_volume.php', 'tests/carga/apache-carga.conf',
+            'docker/Dockerfile', 'docker/docker-compose.yml', 'docker/iniciar-banco.php', 'docker/.env.example', '.dockerignore',
+            'docker/backup.sh', 'docker/funcoes-banco.sh', 'docker/restaurar.sh', 'docker/copia-teste.sh',
         ]);
     }
 
@@ -82,6 +91,41 @@ final class ConfiguracaoApacheTest extends TestCase
     {
         $c = $this->get('ASSETS/CSS/loginStyle.css')['cabecalhos'];
         $this->assertSame(['nosniff'], $c['x-content-type-options'] ?? []);
+        $this->assertSame(['same-origin'], $c['cross-origin-resource-policy'] ?? [], 'outros sites não podem embutir nossos arquivos');
+    }
+
+    public function testPaginaDeErroTemPermissionsPolicy(): void
+    {
+        $this->assertNotEmpty($this->get('sitemap.xml')['cabecalhos']['permissions-policy'] ?? []);
+    }
+
+    public function testCabecalhoXOriginalUrlNaoBurlaOBloqueio(): void
+    {
+        //"Bypassing 403" do ZAP: truque que funciona em IIS/Nginx; no Apache deve ser ignorado
+        foreach (['X-Original-URL: /BACKEND/CONNECTION/config.php', 'X-Rewrite-URL: /.env'] as $cabecalho) {
+            $curl = curl_init(self::base());
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => [$cabecalho],
+                CURLOPT_SSL_VERIFYPEER => !getenv('GKT_TLS_INSEGURO'), CURLOPT_SSL_VERIFYHOST => getenv('GKT_TLS_INSEGURO') ? 0 : 2]);
+            $corpo = (string) curl_exec($curl);
+            curl_close($curl);
+            $this->assertStringNotContainsString('DB_PASSWORD', $corpo, $cabecalho);
+            $this->assertStringNotContainsString('class Database', $corpo, $cabecalho);
+        }
+    }
+
+    public function testPaginaDeErroTemCspQueNaoPermiteNada(): void
+    {
+        //achado do OWASP ZAP: 404 do Apache (robots.txt, sitemap.xml) vinha sem CSP
+        $c = $this->get('sitemap.xml')['cabecalhos'];
+        $this->assertSame(["default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"], $c['content-security-policy'] ?? []);
+        $this->assertSame(['nosniff'], $c['x-content-type-options'] ?? []);
+    }
+
+    public function testRobotsPedeParaNaoIndexarOSistema(): void
+    {
+        $resposta = $this->get('robots.txt');
+        $this->assertSame(200, $resposta['status']);
+        $this->assertMatchesRegularExpression('/^Disallow: \/\s*$/m', $resposta['corpo']);
     }
 
     public function testPaginaDeErroNaoMostraDetalhesDoServidor(): void
@@ -89,6 +133,75 @@ final class ConfiguracaoApacheTest extends TestCase
         $corpo = $this->get('nao-existe-' . uniqid() . '.php')['corpo'];
         $this->assertStringNotContainsStringIgnoringCase('Apache/2', $corpo);
         $this->assertStringNotContainsString('C:\\xampp', $corpo);
+    }
+
+    public function testSoGetPostEHeadSaoAceitos(): void
+    {
+        //"Proxy Disclosure" do ZAP usava OPTIONS/TRACE/TRACK para identificar o servidor
+        foreach (['OPTIONS', 'PUT', 'DELETE', 'PATCH', 'TRACE', 'TRACK', 'PROPFIND'] as $metodo) {
+            $curl = curl_init(self::base() . 'index.php');
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => $metodo, CURLOPT_NOBODY => false,
+                CURLOPT_SSL_VERIFYPEER => !getenv('GKT_TLS_INSEGURO'), CURLOPT_SSL_VERIFYHOST => getenv('GKT_TLS_INSEGURO') ? 0 : 2]);
+            curl_exec($curl);
+            $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+            curl_close($curl);
+            $this->assertContains($status, [403, 405, 501], "$metodo deveria ser recusado");
+        }
+        $this->assertSame(200, $this->get('index.php')['status']);
+    }
+
+    // ---------- HTTPS (so quando o endereco testado e https, como no container) ----------
+
+    private function exigirHttps(): void
+    {
+        if (!str_starts_with(self::base(), 'https://')) {
+            $this->markTestSkipped('Sistema testado sem HTTPS (XAMPP local)');
+        }
+    }
+
+    public function testHttpRedirecionaParaHttps(): void
+    {
+        $this->exigirHttps();
+        $http = 'http://' . substr(self::base(), strlen('https://'));
+        $resposta = (new Navegador())->get($http . 'sistema.php?pagina=ALUNOS');
+        $this->assertSame(301, $resposta['status']);
+        $this->assertStringStartsWith('https://', $resposta['destino']);
+        $this->assertStringEndsWith('/sistema.php?pagina=ALUNOS', $resposta['destino']);
+    }
+
+    public function testHttpsLigaHstsECookieSeguro(): void
+    {
+        $this->exigirHttps();
+        $c = $this->get('index.php')['cabecalhos'];
+        $this->assertStringStartsWith('max-age=31536000', $c['strict-transport-security'][0] ?? '');
+        $this->assertMatchesRegularExpression('/GKTSESSID=[^;]+;.*secure/i', implode("\n", $c['set-cookie'] ?? []));
+        $this->assertCount(1, $c['strict-transport-security'], 'HSTS sem duplicar');
+    }
+
+    public function testHstsTambemEmArquivosEErros(): void
+    {
+        $this->exigirHttps();
+        foreach (['ASSETS/CSS/loginStyle.css', 'favicon.png', 'sitemap.xml'] as $caminho) {
+            $c = $this->get($caminho)['cabecalhos'];
+            $this->assertSame(['max-age=31536000; includeSubDomains'], $c['strict-transport-security'] ?? [], $caminho);
+        }
+    }
+
+    public function testTlsAntigoEhRecusado(): void
+    {
+        $this->exigirHttps();
+        foreach ([CURL_SSLVERSION_TLSv1_0 | CURL_SSLVERSION_MAX_TLSv1_0, CURL_SSLVERSION_TLSv1_1 | CURL_SSLVERSION_MAX_TLSv1_1] as $versao) {
+            $curl = curl_init(self::base() . 'index.php');
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_SSLVERSION => $versao,
+                CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => 0]);
+            $this->assertFalse(curl_exec($curl), 'TLS 1.0/1.1 deveria ser recusado');
+            curl_close($curl);
+        }
+        $curl = curl_init(self::base() . 'index.php');
+        curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+            CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => 0]);
+        $this->assertNotFalse(curl_exec($curl), 'TLS 1.2 deve funcionar');
+        curl_close($curl);
     }
 
     public function testApacheSoAtendeEsteComputador(): void

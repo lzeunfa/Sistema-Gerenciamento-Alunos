@@ -17,7 +17,7 @@
         "sort-packages": true
     },
     "scripts": {
-        "analise": "phpstan analyse --no-progress --memory-limit=512M",
+        "analise": "phpstan analyse --no-progress --memory-limit=1G",
         "testes": "phpunit",
         "testes:unidade": "phpunit --testsuite unidade"
     }

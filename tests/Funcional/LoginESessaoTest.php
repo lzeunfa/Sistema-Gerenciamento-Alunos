@@ -67,6 +67,16 @@ final class LoginESessaoTest extends TesteFuncional
         $this->assertSame(302, $this->nav->get('sistema.php')['status'], 'continua sem login');
     }
 
+    public function testCamposDoLoginEnviadosComoListaSaoTratadosComoVazios(): void
+    {
+        //ferramentas de ataque mandam inputUser[]=x; antes isso causava TypeError no trim() (erro 500)
+        $token = Navegador::token($this->nav->get('index.php')['corpo']);
+        $resposta = $this->nav->post('BACKEND/CONTROLLER/actions.php', ['csrf_token' => $token, 'inputUser' => ['admin'], 'inputUserPass' => ['x']]);
+        $this->assertSame(302, $resposta['status']);
+        $this->assertSame('/index.php', $this->destino($resposta));
+        $this->assertSame('Preencha usuário e senha!', Navegador::mensagem($this->nav->get('index.php')['corpo']));
+    }
+
     public function testAbrirOActionsPeloNavegadorNaoFazLogin(): void
     {
         $this->assertSame('/index.php', $this->destino($this->nav->get('BACKEND/CONTROLLER/actions.php')));
@@ -117,6 +127,18 @@ final class LoginESessaoTest extends TesteFuncional
         $this->entrar();
         $restantes = Database::getConexao()->query("SELECT COUNT(*) FROM LOGIN_TENTATIVAS WHERE CHAVE = 'login:" . self::LOGIN . "'")->fetchColumn();
         $this->assertSame(0, (int) $restantes);
+    }
+
+    public function testTentativasAntigasSaoApagadasParaATabelaNaoCrescerSemLimite(): void
+    {
+        //sob ataque de forca bruta prolongado a tabela cresceria para sempre
+        $pdo = Database::getConexao();
+        $pdo->exec("INSERT INTO LOGIN_TENTATIVAS (CHAVE, DATAHORA) SELECT TOP 500 'ip:10.0.0.1', DATEADD(DAY, -2, GETDATE()) FROM sys.all_objects");
+        $this->tentarLogin(self::LOGIN, 'senha-errada-qualquer');
+        $antigas = $pdo->query("SELECT COUNT(*) FROM LOGIN_TENTATIVAS WHERE DATAHORA < DATEADD(DAY, -1, GETDATE())")->fetchColumn();
+        $this->assertSame(0, (int) $antigas);
+        $recentes = $pdo->query("SELECT COUNT(*) FROM LOGIN_TENTATIVAS")->fetchColumn();
+        $this->assertSame(2, (int) $recentes, 'a tentativa errada de agora continua contando (login e IP)');
     }
 
     public function testSenhaAntigaEmBcryptViraArgon2idNoLogin(): void

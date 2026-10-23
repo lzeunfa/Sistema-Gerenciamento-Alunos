@@ -1,6 +1,8 @@
 <?php
 //botoes Editar / Exportar / Excluir de uma linha da tabela; usado por ALUNOS.php e TURMAS.php
 //espera $aluno (linha de listarAlunosCompletos) e $paginaVolta ('ALUNOS' ou 'TURMAS')
+/** @var array<string, mixed> $aluno */
+/** @var string $paginaVolta */
 $linkMatricula = 'matricula=' . urlencode($aluno['ALUMATRICULA']) . '&voltar=' . $paginaVolta;
 ?>
 <div class="acoes">

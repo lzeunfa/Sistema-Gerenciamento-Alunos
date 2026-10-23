@@ -38,6 +38,20 @@ C:\xampp\php\php.exe vendor\bin\phpunit tests\Integracao\CadastroTest.php
 C:\xampp\php\php.exe vendor\bin\phpunit --filter testCpfRepetidoEhRecusado
 ```
 
+## Carga e volume (escalabilidade)
+
+Não fazem parte do `phpunit`: medem tempo de resposta com muita gente ou muitos dados. Também só usam o
+`gktgym_teste`, recriado do zero.
+
+```powershell
+# muitas pessoas ao mesmo tempo (padrão: 30 pessoas por 2 minutos + 5 logins/s), numa 2a instância do Apache do
+# XAMPP na porta 8098 ligada ao banco de teste; o Apache normal e o banco gktgym não são tocados
+pwsh tests/carga/carga_windows.ps1
+pwsh tests/carga/carga_windows.ps1 -Pessoas 100 -Segundos 90
+```
+Saída: por tipo de pedido, quantidade, mediana, p95, máximo e erros. No Docker: `bash docker/teste-carga.sh` (k6) e
+`bash docker/teste-volume.sh` (`docker/README.md`).
+
 ## Como escrever um teste novo
 
 - Sem banco: `final class XTest extends PHPUnit\Framework\TestCase` em `Unidade/`.
@@ -50,4 +64,4 @@ C:\xampp\php\php.exe vendor\bin\phpunit --filter testCpfRepetidoEhRecusado
 
 - Aparência das telas (CSS, responsividade) e o JavaScript do botão de mostrar senha.
 - `DB/backup.ps1` (precisa de permissão de escrita do serviço do SQL Server).
-- Testes de integração e funcionais no CI do GitHub (precisariam de um SQL Server no runner).
+- Carga e volume no CI (demoram minutos; rode à mão antes de cada entrega, ver D-014).

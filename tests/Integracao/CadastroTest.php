@@ -39,6 +39,45 @@ final class CadastroTest extends TesteComBanco
         $this->assertSame('26141313', $this->cadastrar());
     }
 
+    public function testMatriculaComLetrasNaoImpedeNovosCadastros(): void
+    {
+        //matriculaValida() aceita letras; o CAST do MAX falhava com ela e nenhum aluno novo era cadastrado
+        Database::getConexao()->exec("INSERT INTO ALUNOS (ALUMATRICULA, ALUNOME, ALUTELEFONE, ALUEMAIL, ALUCPF, ALUDATANASC, ALUSTATUS)
+            VALUES ('ANTIGA-7', 'PEDRO', '61999990009', 'pedro@exemplo.invalid', '" . self::CPFS[5] . "', '2003-02-14', 2)");
+        $this->assertSame('14001', $this->cadastrar());
+    }
+
+    public function testDoisCadastrosAoMesmoTempoNaoDisputamAMesmaMatricula(): void
+    {
+        //recepcao A pegou o proximo numero e ainda nao gravou; a recepcao B cadastra nesse instante.
+        //Achado no teste de carga: os dois liam o mesmo MAX e o segundo falhava com matricula duplicada
+        $c = Database::configuracao();
+        $dsn = "{$c['DB_CONNECTION']}:Server={$c['DB_HOST']},{$c['DB_PORT']};Database={$c['DB_DATABASE']}" . (empty($c['DB_TRUST_CERT']) ? '' : ';TrustServerCertificate=1');
+        $recepcaoA = new PDO($dsn, $c['DB_USERNAME'], $c['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $recepcaoA->beginTransaction();
+        $matriculaA = gerarProximaMatricula($recepcaoA);
+
+        $codigoB = 'require "' . str_replace('\\', '/', RAIZ_PROJETO) . '/BACKEND/CONTROLLER/funcoes.php";'
+            . 'echo cadastrarAluno("ALUNO B", "61999990000", "b@exemplo.invalid", "' . self::CPFS[1] . '", "M", "1990-05-10", "70000000", "Rua Ficticia 1", [1], 1, 1, 1);';
+        $recepcaoB = proc_open([PHP_BINARY, '-r', $codigoB], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes, RAIZ_PROJETO,
+            array_merge(getenv(), ['GKT_DB_DATABASE' => BANCO_TESTE]), ['bypass_shell' => true]);
+        fclose($pipes[0]);
+        usleep(1500000);
+        $this->assertTrue(proc_get_status($recepcaoB)['running'], 'o cadastro B precisa esperar o A terminar');
+
+        $recepcaoA->prepare("INSERT INTO ALUNOS (ALUMATRICULA, ALUNOME, ALUTELEFONE, ALUEMAIL, ALUCPF, ALUDATANASC, ALUSTATUS)
+            VALUES (:m, 'ALUNO A', '61999990000', 'a@exemplo.invalid', :cpf, '1990-05-10', 2)")
+            ->execute([':m' => $matriculaA, ':cpf' => self::CPFS[0]]);
+        $recepcaoA->commit();
+
+        $matriculaB = trim(stream_get_contents($pipes[1]));
+        $erros = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($recepcaoB);
+        $this->assertSame((string) ($matriculaA + 1), $matriculaB, "cadastro B falhou: $erros");
+    }
+
     public function testMenorGuardaOResponsavelLegal(): void
     {
         $matricula = $this->cadastrar([

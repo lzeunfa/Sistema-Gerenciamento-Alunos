@@ -1,19 +1,15 @@
-<!--html da pagina turmas-->
+<?php /* html da pagina turmas */ ?>
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
 $filtroEscolhido = isset($_GET['filtrando']) && is_string($_GET['filtrando']) ? $_GET['filtrando'] : '';
 
-$limite = 40;
-$pagina_atual = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
-$offset = ($pagina_atual - 1) * $limite;
-
-$total_registros = contarAlunosCompletos($filtroEscolhido);
-$total_paginas = ceil($total_registros / $limite);
-
-$listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset);
+$listagem = dadosListagem($filtroEscolhido, $_GET['p'] ?? null);
+$listaAlunosDashboard = $listagem['alunos'];
+$pagina_atual = $listagem['pagina'];
+$total_paginas = $listagem['totalPaginas'];
 ?>
-<!--form que realiza filtro-->
-<!--colocar action pro arquivo que faz o necessario para filtrar-->
+<?php /* form que realiza filtro */ ?>
+<?php /* colocar action pro arquivo que faz o necessario para filtrar */ ?>
 <form id="form_filtrosTurmas" action="sistema.php" class="filter-form">
     <input type="hidden" name="pagina" value="TURMAS">
     <label for="filtrando">Escolha um filtro:</label>
@@ -36,7 +32,7 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
 <?php endif; ?>
 
 <?php if (empty($listaAlunosDashboard)): ?>
-    <!--caso a pesquisa nao retorne nada-->
+    <?php /* caso a pesquisa nao retorne nada */ ?>
     <h1 class="text-center mt-4 mb-4">Nenhum resultado foi encontrado!</h1>
 <?php else: ?>
     <div class="container p-2 mb-3">
@@ -91,41 +87,21 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
             </tbody>
         </table>
 
-        <div class="paginacao d-flex justify-content-center mt-4">
-            <?php if (isset($total_paginas) && $total_paginas > 1): ?>
-                <nav aria-label="Navegação de página">
-                    <ul class="pagination">
-                        <li class="page-item <?= ($pagina_atual <= 1) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="sistema.php?pagina=TURMAS&filtrando=<?= urlencode($filtroEscolhido) ?>&p=<?= $pagina_atual - 1 ?>">Anterior</a>
-                        </li>
-                        
-                        <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                            <li class="page-item <?= ($pagina_atual == $i) ? 'active' : '' ?>">
-                                <a class="page-link" href="sistema.php?pagina=TURMAS&filtrando=<?= urlencode($filtroEscolhido) ?>&p=<?= $i ?>"><?= $i ?></a>
-                            </li>
-                        <?php endfor; ?>
-                        
-                        <li class="page-item <?= ($pagina_atual >= $total_paginas) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="sistema.php?pagina=TURMAS&filtrando=<?= urlencode($filtroEscolhido) ?>&p=<?= $pagina_atual + 1 ?>">Próxima</a>
-                        </li>
-                    </ul>
-                </nav>
-            <?php endif; ?>
-        </div>
+        <?php $paginaVolta = 'TURMAS'; include 'ASSETS/PAGINAS/_paginacao.php'; ?>
     </div>
 <?php endif; ?>
 
-<!--section com o divisor com a logo da gkt-->
+<?php /* section com o divisor com a logo da gkt */ ?>
 <section id="divisor" class="d-flex justify-content-center align-items-center mt-3 mb-3">
     <img src="ASSETS/IMGS/LOGOS/logo_gktSF.png" alt="logo da academia gkt" width="100px">
 </section>
 
-<!--section container para as opcoes de gerenciamento-->
+<?php /* section container para as opcoes de gerenciamento */ ?>
 <section id="opcoesGerenciamento" class="d-flex flex-column justify-content-center align-items-center">
 
     <h1>Opções de gerenciamento</h1>
 
-    <!--div centralizadora das opcoes-->
+    <?php /* div centralizadora das opcoes */ ?>
     <div class="d-flex flex-wrap justify-content-center">
 
         <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">

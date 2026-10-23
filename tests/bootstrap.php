@@ -35,12 +35,14 @@ function bancoTesteDisponivel(): bool
     if ($disponivel !== null) {
         return $disponivel;
     }
-    $env = @parse_ini_file(RAIZ_PROJETO . '/.env');
-    if (!$env || !extension_loaded('pdo_sqlsrv')) {
+    $temConfig = file_exists(RAIZ_PROJETO . '/.env') || getenv('DB_HOST') !== false;
+    if (!$temConfig || !extension_loaded('pdo_sqlsrv')) {
         return $disponivel = false;
     }
+    $env = Database::configuracao();
+    $confiar = !empty($env['DB_TRUST_CERT']) ? ';TrustServerCertificate=1' : '';
     try {
-        new PDO("sqlsrv:Server={$env['DB_HOST']},{$env['DB_PORT']};Database=" . BANCO_TESTE . ";LoginTimeout=3", $env['DB_USERNAME'], $env['DB_PASSWORD']);
+        new PDO("sqlsrv:Server={$env['DB_HOST']},{$env['DB_PORT']};Database=" . BANCO_TESTE . ";LoginTimeout=3$confiar", $env['DB_USERNAME'], $env['DB_PASSWORD']);
         return $disponivel = true;
     } catch (PDOException $erro) {
         return $disponivel = false;

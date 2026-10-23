@@ -1,0 +1,9 @@
+# Nunca entra na imagem: segredos, historico do Git, dependencias locais e relatorios
+.git
+.env
+docker/.env
+vendor
+.phpunit.cache
+relatorios
+*.bak
+*.log
