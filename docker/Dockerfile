@@ -24,8 +24,9 @@ RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY docker/php-gkt.ini $PHP_INI_DIR/conf.d/zz-gkt.ini
 
 # Apache: .htaccess ligado, sem listagem de pastas, sem revelar versao
-COPY docker/apache-gkt.conf /etc/apache2/conf-available/gkt.conf
-RUN a2enmod headers alias && a2enconf gkt
+# "zz-" para carregar depois do security.conf do Debian, que define ServerTokens OS e ServerSignature On
+COPY docker/apache-gkt.conf /etc/apache2/conf-available/zz-gkt.conf
+RUN a2enmod headers alias && a2enconf zz-gkt
 
 WORKDIR /var/www/html
 
