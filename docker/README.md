@@ -47,7 +47,7 @@ git clone https://github.com/lzeunfa/Sistema-Gerenciamento-Alunos.git
 cd Sistema-Gerenciamento-Alunos
 cp docker/.env.example docker/.env
 ```
-Edite `docker/.env` e troque as duas senhas. Para gerar senhas fortes:
+Edite `docker/.env` e preencha as duas senhas (elas vêm em branco e o Docker não sobe sem elas). Para gerar senhas fortes:
 ```bash
 echo "SA: $(openssl rand -base64 18)Aa1-"; echo "APP: $(openssl rand -base64 18)Bb2-"
 ```
