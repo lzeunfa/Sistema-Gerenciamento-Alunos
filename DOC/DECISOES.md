@@ -124,3 +124,24 @@ cabeçalhos ausentes, entradas em lista derrubando páginas) só apareceram assi
 **Decisão:** antes de cada entrega: testes automatizados no container, varredura ZAP com e sem login e teste de
 carga (k6), conforme `docker/README.md`. O CI do GitHub roda os testes no container a cada push.
 **Consequências:** uma entrega leva cerca de 40 minutos de verificação automática; achado novo vira teste.
+
+## D-015 — Backup do container pelo sqlcmd do próprio SQL Server, restauração por script
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** no Docker não havia backup automatizado nem caminho testado de volta; o usuário `gkt_app` não pode
+fazer backup (privilégio mínimo, D-008) e a imagem do sistema não tem `sqlcmd`.
+**Decisão:** `docker/backup.sh` roda `BACKUP ... WITH CHECKSUM` e `RESTORE VERIFYONLY` com o `sqlcmd` que já vem na
+imagem oficial do SQL Server, como `sa`; a senha vai por variável de ambiente (`SQLCMDPASSWORD`), nunca pela
+linha de comando. O arquivo sai do container para `~/backups-gkt` (fora do projeto, permissão 600), com 30 dias de
+retenção. `docker/restaurar.sh` exige `--confirmo-substituir`, faz backup do estado atual antes e re-roda o
+`banco-init`, que aplica migrações e religa o `gkt_app` (`ALTER USER ... WITH LOGIN`) a um banco vindo de outro
+servidor, inclusive do XAMPP.
+**Consequências:** um backup do Windows (`DB/backup.ps1`) pode ser levado para o Docker. Guardar a cópia fora do
+computador continua sendo tarefa da academia.
+
+## D-016 — Sistema do container só em 127.0.0.1 por padrão
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** portas publicadas pelo Docker passam por cima do firewall do Debian (`ufw`); publicar em `0.0.0.0`
+deixaria o sistema aberto em qualquer interface (VPN, Wi-Fi de visitantes).
+**Decisão:** `ENDERECO_APP` em `docker/.env`, padrão `127.0.0.1`. Para a recepção, o IP do servidor na rede local
+(`docker/README.md`, seção 8).
+**Consequências:** quem sobe o sistema pela primeira vez só acessa pelo próprio computador até decidir abrir.

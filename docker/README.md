@@ -1,7 +1,7 @@
 <!--
 COMO MANTER ESTE ARQUIVO
 - Passos copiáveis, na ordem, para uma máquina Debian limpa. Mudou algo no Dockerfile ou no compose? Atualize aqui.
-- Exemplo de passo bom:  "docker compose -f docker/docker-compose.yml up -d --build" com o que deve aparecer depois.
+- Exemplo de passo bom:  "docker compose -f docker/docker-compose.yml up -d --wait app" com o que deve aparecer depois.
 - Exemplo de passo ruim: "suba os containers".
 -->
 
@@ -12,10 +12,11 @@ Roda o sistema igual em qualquer computador, sem instalar XAMPP, drivers nem SQL
 | Container | O que é |
 |---|---|
 | `banco` | SQL Server 2022 Express (imagem oficial da Microsoft). Os dados ficam no volume `dados-sqlserver`. |
-| `banco-init` | Roda uma vez a cada subida (`docker/iniciar-banco.php`): cria o banco (se não existir), aplica `DB/` e acerta o usuário `gkt_app`. |
-| `app` | PHP 8.2 + Apache + drivers, com as mesmas proteções do XAMPP. Em http://127.0.0.1:8080 |
+| `banco-init` | Roda a cada subida (`docker/iniciar-banco.php`): cria o banco (se não existir), aplica `DB/` e acerta o usuário `gkt_app`. |
+| `app` | PHP 8.2 + Apache + drivers, com as mesmas proteções do XAMPP, **só em HTTPS**: https://127.0.0.1:8443 |
 | `testes` | Só quando pedido: roda os testes automatizados num banco separado (`gktgym_teste`). |
 | `zap` | Só quando pedido: OWASP ZAP, varredura de segurança contra o `app`. |
+| `carga` | Só quando pedido: k6, teste de carga (muitas pessoas usando ao mesmo tempo). |
 
 O banco **não** fica exposto na rede; só os outros containers enxergam ele.
 
@@ -40,17 +41,26 @@ sudo usermod -aG docker $USER
 ```
 Saia e entre de novo na sessão (para o grupo `docker` valer) e confira com `docker run --rm hello-world`.
 
+**Se este computador vai ser o servidor**, impeça que ele entre em suspensão sozinho (o Debian com interface
+gráfica suspende depois de um tempo parado, e o sistema some da rede):
+```bash
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+```
+Para desfazer: `sudo systemctl unmask sleep.target suspend.target hibernate.target hybrid-sleep.target`.
+
 ## 2. Baixar o projeto e definir as senhas
 
 ```bash
 git clone https://github.com/lzeunfa/Sistema-Gerenciamento-Alunos.git
 cd Sistema-Gerenciamento-Alunos
 cp docker/.env.example docker/.env
+chmod 600 docker/.env
 ```
 Edite `docker/.env` e preencha as duas senhas (elas vêm em branco e o Docker não sobe sem elas). Para gerar senhas fortes:
 ```bash
 echo "SA: $(openssl rand -base64 18)Aa1-"; echo "APP: $(openssl rand -base64 18)Bb2-"
 ```
+No mesmo arquivo ficam a porta (`PORTA_APP`, padrão 8443) e quem pode abrir o sistema (`ENDERECO_APP`, ver seção 8).
 
 ## 3. Subir o sistema
 
@@ -73,7 +83,12 @@ Quando aparecer `Banco gktgym pronto.`, crie o seu administrador (a senha é ped
 ```bash
 docker compose -f docker/docker-compose.yml exec app php DB/criar_admin.php seu_login
 ```
-Abra **http://127.0.0.1:8080** e entre.
+Abra **https://127.0.0.1:8443** e entre.
+
+**Aviso de certificado no navegador:** na primeira subida o container cria um certificado HTTPS só desta instalação
+(autoassinado). A conexão é criptografada, mas o navegador não conhece quem assinou e mostra "Sua conexão não é
+particular". Clique em **Avançado → Continuar para 127.0.0.1**. Para o aviso sumir, use um certificado de verdade
+(seção 8). Quem abrir por `http://` é mandado para `https://`.
 
 ## 4. Rodar os testes automatizados
 
@@ -91,18 +106,94 @@ vazamento de informação, arquivos expostos etc. **Ele só ataca o container `a
 > Rode contra um banco **sem dados reais**. Depois de subir o ambiente pela primeira vez o banco `gktgym` só tem os
 > dados iniciais fictícios. Nunca aponte o ZAP para um sistema que não é seu.
 
+Sem login (como um atacante de fora):
 ```bash
 mkdir -p relatorios
 docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap
 ```
-Leva de 5 a 20 minutos. O relatório fica em `relatorios/zap-relatorio.html` (abra no navegador) e
-`relatorios/zap-relatorio.json`. A pasta `relatorios/` nunca vai para o Git.
+Logado como administrador (telas internas: cadastro, edição, exportação, exclusão). Cria um administrador
+temporário com senha aleatória e apaga no fim; **cadastra e altera alunos fictícios** no banco do container:
+```bash
+bash docker/varredura-autenticada.sh
+```
+Cada uma leva de 10 a 40 minutos. Os relatórios ficam em `relatorios/` (abra o `.html` no navegador). A pasta
+`relatorios/` nunca vai para o Git.
 
 **Como ler:** cada alerta tem um nível. `High` e `Medium` precisam de correção; `Low` e `Informational` são
 recomendações. Mande o JSON (ou cole os alertas High/Medium) para revisão.
 
-**Limitação:** esta varredura é feita sem login, como um atacante de fora. As páginas internas são cobertas pelos
-testes funcionais (`tests/Funcional`), que simulam força bruta, CSRF, XSS, injeção e acesso sem permissão.
+## 6. Escalabilidade: carga e volume
+
+**Carga** (muitas pessoas usando ao mesmo tempo): o k6 simula até 30 pessoas na recepção usando o sistema e um
+pico de logins. Cria um administrador temporário e **cadastra alunos fictícios** no banco do container:
+```bash
+bash docker/teste-carga.sh
+```
+Resumo em `relatorios/carga-resumo.json` e uso de CPU/memória em `relatorios/carga-recursos.csv`.
+
+**Volume** (muitos alunos no banco): enche o banco de **teste** com alunos fictícios e mede cada tela. Sobe uma
+cópia temporária do sistema ligada ao `gktgym_teste`; o `gktgym` não é tocado:
+```bash
+bash docker/teste-volume.sh 20000
+```
+Saída: uma linha por tela com o tempo médio. Abaixo de 500 ms é confortável para uso na recepção.
+
+## 7. Backup e restauração
+
+Backup verificado (o SQL Server confere o arquivo depois de gravar) em `~/backups-gkt`, fora da pasta do projeto,
+legível só pelo seu usuário. Backups com mais de 30 dias são apagados:
+```bash
+bash docker/backup.sh
+```
+Uma vez por mês, prove que o backup volta (restaura numa cópia temporária, compara as contagens e apaga a cópia):
+```bash
+bash docker/backup.sh --testar-restauracao
+```
+Para agendar todo dia às 23h, rode o backup uma vez à mão (cria a pasta), depois `crontab -e` e acrescente a linha
+(ajuste a pasta do projeto):
+```
+0 23 * * * cd ~/projetos/Sistema-Gerenciamento-Alunos && bash docker/backup.sh >> ~/backups-gkt/backup.log 2>&1
+```
+**O backup contém dados pessoais**: guarde uma cópia fora deste computador (HD externo ou nuvem), de preferência
+criptografada. Backup que fica só no mesmo disco some junto com ele.
+
+**Restaurar** (desastre, ou trazer o banco que estava no XAMPP, feito com `DB/backup.ps1`). Substitui **todos** os
+dados do `gktgym` do container; antes, faz um backup do estado atual:
+```bash
+bash docker/restaurar.sh ~/backups-gkt/gktgym_AAAAMMDD_HHMMSS.bak --confirmo-substituir
+```
+Depois de restaurar, a subida aplica as migrações que faltarem no backup e religa o usuário `gkt_app`.
+
+## 8. Acesso pela rede da academia
+
+Por padrão o sistema só abre neste computador (`ENDERECO_APP=127.0.0.1`). Para os computadores da recepção:
+
+1. Em `docker/.env`, coloque o IP deste servidor na rede nas duas linhas (veja o IP com `hostname -I`):
+   ```
+   ENDERECO_APP=192.168.1.23
+   GKT_CERT_IP=192.168.1.23
+   ```
+   Use o IP da rede local, não `0.0.0.0`: assim o sistema não fica disponível em outras interfaces (VPN, Wi-Fi de
+   visitantes). **Atenção:** portas publicadas pelo Docker passam por cima do firewall `ufw`; quem decide quem
+   enxerga o sistema é este `ENDERECO_APP`.
+2. Fixe esse IP no roteador (reserva de DHCP), senão ele pode mudar e os computadores perdem o sistema.
+3. Gere o certificado de novo com o IP novo e suba:
+   ```bash
+   docker compose -f docker/docker-compose.yml down && docker volume rm gkt_certificados
+   ```
+   ```bash
+   docker compose -f docker/docker-compose.yml up -d --wait app
+   ```
+4. Nos computadores da recepção, abra `https://192.168.1.23:8443` e aceite o aviso do certificado uma vez.
+
+**Certificado de verdade** (sem aviso): se a academia tiver um domínio, gere um certificado (por exemplo, Let's
+Encrypt) e copie para o container com os nomes `gkt.crt` e `gkt.key`:
+```bash
+docker compose -f docker/docker-compose.yml cp seu-certificado.crt app:/etc/gkt-certificados/gkt.crt
+docker compose -f docker/docker-compose.yml cp sua-chave.key app:/etc/gkt-certificados/gkt.key
+docker compose -f docker/docker-compose.yml restart app
+```
+O certificado fica no volume `certificados` e continua valendo depois de `down`/`up`.
 
 ## Dia a dia
 
@@ -111,7 +202,9 @@ testes funcionais (`tests/Funcional`), que simulam força bruta, CSRF, XSS, inje
 | Parar tudo | `docker compose -f docker/docker-compose.yml down` |
 | Atualizar depois de um `git pull` | `bash docker/construir.sh` e depois `docker compose -f docker/docker-compose.yml up -d --wait app` |
 | Ver erros do PHP/Apache | `docker compose -f docker/docker-compose.yml logs -f app` |
-| Backup do banco | `docker compose -f docker/docker-compose.yml exec banco /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "BACKUP DATABASE gktgym TO DISK='/var/opt/mssql/gktgym.bak' WITH INIT"` (rode `source docker/.env` antes) |
-| **Apagar tudo, inclusive o banco** | `docker compose -f docker/docker-compose.yml down -v` (irreversível) |
+| Ver se está tudo de pé | `docker compose -f docker/docker-compose.yml ps` (o `app` deve estar `healthy`) |
+| Backup do banco | `bash docker/backup.sh` |
+| **Apagar tudo, inclusive o banco** | `docker compose -f docker/docker-compose.yml down -v` (irreversível: faça backup antes) |
 
-O comando `down` sem `-v` **mantém** os dados; só `down -v` apaga o volume do banco.
+O comando `down` sem `-v` **mantém** os dados; só `down -v` apaga o volume do banco. Se o computador reiniciar, os
+containers sobem sozinhos (`restart: unless-stopped`), desde que o Docker esteja ativo (`sudo systemctl enable docker`).

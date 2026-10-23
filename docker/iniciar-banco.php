@@ -80,6 +80,8 @@ try {
                 ELSE
                     ALTER LOGIN [$usuarioApp] WITH PASSWORD = $senha;");
     $pdo->exec("IF USER_ID('$usuarioApp') IS NULL CREATE USER [$usuarioApp] FOR LOGIN [$usuarioApp];");
+    //banco restaurado de outro servidor (docker/restaurar.sh) traz o usuario ligado a um login que nao existe aqui
+    $pdo->exec("ALTER USER [$usuarioApp] WITH LOGIN = [$usuarioApp];");
     $pdo->exec("ALTER ROLE db_datareader ADD MEMBER [$usuarioApp];
                 ALTER ROLE db_datawriter ADD MEMBER [$usuarioApp];
                 DENY ALTER, REFERENCES ON SCHEMA::dbo TO [$usuarioApp];

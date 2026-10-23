@@ -43,6 +43,9 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
   matrícula e inscrições para estatística.
 - Situação `INATIVO` para alunos que encerraram a matrícula.
 - `DB/anonimizar_antigos.php`: anonimiza alunos inativos há mais de 5 anos (rodar pelo terminal com `--executar`).
+- Docker: backup verificado (`docker/backup.sh`, com teste de restauração), restauração (`docker/restaurar.sh`,
+  aceita backup feito no XAMPP), teste de carga (`docker/teste-carga.sh`) e de volume (`docker/teste-volume.sh`).
+- Docker: `ENDERECO_APP` em `docker/.env` escolhe quem abre o sistema (padrão: só o próprio computador).
 
 ### Corrigido
 - Aluno cadastrado já como INATIVO ficava sem data de inativação e nunca entrava na retenção de 5 anos.
@@ -64,6 +67,9 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - Fontes da tela de login hospedadas no próprio sistema: sem Google Fonts, a página não carrega nada de outros
   sites e o IP do visitante deixa de ser enviado ao Google (LGPD). A CSP ficou mais restrita.
 - No container, a versão do Apache não aparece mais nos cabeçalhos nem nas páginas de erro.
+- No container o sistema só funciona em HTTPS (TLS 1.2/1.3, porta 8443), com HSTS e cookie de sessão `Secure`;
+  quem abre por `http://` é redirecionado. Certificado gerado por instalação ou trocado por um real (`docker/README.md`).
+- Comentários de desenvolvimento não vão mais para o HTML enviado ao navegador.
 
 ### Alterado
 - Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.

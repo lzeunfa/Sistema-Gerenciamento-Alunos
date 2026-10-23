@@ -5,6 +5,8 @@
 #   docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap      varredura OWASP ZAP (sem login)
 #   bash docker/varredura-autenticada.sh                                              varredura OWASP ZAP (logada)
 #   bash docker/teste-carga.sh                                                        teste de carga (k6)
+#   bash docker/backup.sh                                                             backup verificado do banco
+#   bash docker/restaurar.sh <arquivo.bak> --confirmo-substituir                      restaura um backup
 #
 # As senhas vem de docker/.env (copie de docker/.env.example). Esse arquivo nunca vai para o Git.
 
@@ -55,8 +57,8 @@ services:
       # certificado HTTPS: gerado na primeira subida ou substituido por um real (docker/README.md)
       - certificados:/etc/gkt-certificados
     ports:
-      # so HTTPS. "127.0.0.1:" = so este computador; para a rede da academia troque por "${PORTA_APP:-8443}:443"
-      - "127.0.0.1:${PORTA_APP:-8443}:443"
+      # so HTTPS. Padrao: so este computador; ENDERECO_APP=0.0.0.0 no docker/.env abre para a rede da academia
+      - "${ENDERECO_APP:-127.0.0.1}:${PORTA_APP:-8443}:443"
     depends_on:
       banco-init: { condition: service_completed_successfully }
     restart: unless-stopped
