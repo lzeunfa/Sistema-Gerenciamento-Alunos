@@ -24,10 +24,13 @@ RedirectMatch 404 (?i)\.(sql|md|ini|log|bak|env|sh|ps1|neon|yml|yaml|lock)$
     Header set Referrer-Policy "same-origin"
     Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
     Header set Cross-Origin-Opener-Policy "same-origin"
+    # outros sites nao podem embutir nada daqui (arquivos, fontes, imagens) - achado do OWASP ZAP
+    Header always set Cross-Origin-Resource-Policy "same-origin"
 
     # Paginas de erro do proprio Apache (404, 403...) nao passam pelo PHP, que e quem envia a CSP:
     # recebem uma politica que nao permite carregar nada (achado do OWASP ZAP em robots.txt/sitemap.xml)
     Header always set Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" "expr=%{REQUEST_STATUS} -ge 400"
     Header always set X-Content-Type-Options "nosniff" "expr=%{REQUEST_STATUS} -ge 400"
     Header always set X-Frame-Options "DENY" "expr=%{REQUEST_STATUS} -ge 400"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" "expr=%{REQUEST_STATUS} -ge 400"
 </IfModule>

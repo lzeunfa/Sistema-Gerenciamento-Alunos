@@ -1,0 +1,63 @@
+# Plano do OWASP ZAP (Automation Framework) para varrer o sistema LOGADO como administrador.
+# Rodado por docker/varredura-autenticada.sh, que cria e apaga o administrador temporario.
+# So ataca o container "app" desta rede do Docker.
+env:
+  contexts:
+    - name: gkt
+      urls:
+        - http://app/
+      includePaths:
+        - "http://app/.*"
+      excludePaths:
+        # nao sair da sessao nem bloquear a conta por tentativas de login durante a varredura
+        - "http://app/logout\\.php.*"
+        - "http://app/BACKEND/CONTROLLER/actions\\.php.*"
+      authentication:
+        method: browser
+        parameters:
+          loginPageUrl: http://app/index.php
+          loginPageWait: 5
+          browserId: firefox-headless
+        verification:
+          method: poll
+          loggedInRegex: "Total de alunos"
+          loggedOutRegex: "Entre com suas credenciais"
+          pollFrequency: 50
+          pollUnits: requests
+          pollUrl: http://app/sistema.php
+      sessionManagement:
+        method: autodetect
+      users:
+        - name: admin-zap
+          credentials:
+            username: ${ZAP_USUARIO}
+            password: ${ZAP_SENHA}
+  parameters:
+    failOnError: true
+    progressToStdout: true
+
+jobs:
+  - type: spider
+    parameters:
+      context: gkt
+      user: admin-zap
+      maxDuration: 5
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+  - type: activeScan
+    parameters:
+      context: gkt
+      user: admin-zap
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 45
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: zap-autenticado
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: zap-autenticado

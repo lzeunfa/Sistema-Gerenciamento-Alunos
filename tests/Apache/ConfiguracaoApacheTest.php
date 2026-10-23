@@ -88,6 +88,25 @@ final class ConfiguracaoApacheTest extends TestCase
     {
         $c = $this->get('ASSETS/CSS/loginStyle.css')['cabecalhos'];
         $this->assertSame(['nosniff'], $c['x-content-type-options'] ?? []);
+        $this->assertSame(['same-origin'], $c['cross-origin-resource-policy'] ?? [], 'outros sites não podem embutir nossos arquivos');
+    }
+
+    public function testPaginaDeErroTemPermissionsPolicy(): void
+    {
+        $this->assertNotEmpty($this->get('sitemap.xml')['cabecalhos']['permissions-policy'] ?? []);
+    }
+
+    public function testCabecalhoXOriginalUrlNaoBurlaOBloqueio(): void
+    {
+        //"Bypassing 403" do ZAP: truque que funciona em IIS/Nginx; no Apache deve ser ignorado
+        foreach (['X-Original-URL: /BACKEND/CONNECTION/config.php', 'X-Rewrite-URL: /.env'] as $cabecalho) {
+            $curl = curl_init(self::base());
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => [$cabecalho]]);
+            $corpo = (string) curl_exec($curl);
+            curl_close($curl);
+            $this->assertStringNotContainsString('DB_PASSWORD', $corpo, $cabecalho);
+            $this->assertStringNotContainsString('class Database', $corpo, $cabecalho);
+        }
     }
 
     public function testPaginaDeErroTemCspQueNaoPermiteNada(): void

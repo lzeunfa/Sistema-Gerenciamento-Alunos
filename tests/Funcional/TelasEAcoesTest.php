@@ -63,6 +63,7 @@ final class TelasEAcoesTest extends TesteFuncional
         $this->assertSame('DENY', $c['x-frame-options'][0] ?? null);
         $this->assertSame('nosniff', $c['x-content-type-options'][0] ?? null);
         $this->assertSame('no-store', $c['cache-control'][0] ?? null);
+        $this->assertSame('require-corp', $c['cross-origin-embedder-policy'][0] ?? null);
         $this->assertArrayNotHasKey('x-powered-by', $c);
     }
 

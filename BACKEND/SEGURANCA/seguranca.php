@@ -47,6 +47,8 @@ header("Content-Security-Policy: default-src 'self'; "
     . "img-src 'self' data:; "
     . "connect-src 'self'; "
     . "form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
+//pagina so carrega recurso de outro site que autorize (o Bootstrap do jsDelivr vem com crossorigin + SRI)
+header('Cross-Origin-Embedder-Policy: require-corp');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
