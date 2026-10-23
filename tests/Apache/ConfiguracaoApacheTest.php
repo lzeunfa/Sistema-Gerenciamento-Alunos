@@ -90,6 +90,21 @@ final class ConfiguracaoApacheTest extends TestCase
         $this->assertSame(['nosniff'], $c['x-content-type-options'] ?? []);
     }
 
+    public function testPaginaDeErroTemCspQueNaoPermiteNada(): void
+    {
+        //achado do OWASP ZAP: 404 do Apache (robots.txt, sitemap.xml) vinha sem CSP
+        $c = $this->get('sitemap.xml')['cabecalhos'];
+        $this->assertSame(["default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"], $c['content-security-policy'] ?? []);
+        $this->assertSame(['nosniff'], $c['x-content-type-options'] ?? []);
+    }
+
+    public function testRobotsPedeParaNaoIndexarOSistema(): void
+    {
+        $resposta = $this->get('robots.txt');
+        $this->assertSame(200, $resposta['status']);
+        $this->assertMatchesRegularExpression('/^Disallow: \/\s*$/m', $resposta['corpo']);
+    }
+
     public function testPaginaDeErroNaoMostraDetalhesDoServidor(): void
     {
         $corpo = $this->get('nao-existe-' . uniqid() . '.php')['corpo'];

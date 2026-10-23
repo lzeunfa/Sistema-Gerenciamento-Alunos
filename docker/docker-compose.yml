@@ -67,7 +67,7 @@ services:
 
   zap:
     profiles: [seguranca]
-    image: ghcr.io/zaproxy/zaproxy:stable
+    image: zaproxy/zap-stable   # imagem oficial do ZAP no Docker Hub (o ghcr.io nao responde em algumas redes)
     # varredura ATIVA, apenas contra o container "app" desta rede (dados ficticios do banco gktgym)
     command: ["zap-full-scan.py", "-t", "http://app/", "-r", "zap-relatorio.html", "-J", "zap-relatorio.json", "-I", "-m", "5"]
     user: root

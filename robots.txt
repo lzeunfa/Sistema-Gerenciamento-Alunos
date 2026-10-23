@@ -1,0 +1,3 @@
+# Sistema interno da academia: nenhuma pagina deve aparecer em buscadores.
+User-agent: *
+Disallow: /

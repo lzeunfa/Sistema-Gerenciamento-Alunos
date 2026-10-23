@@ -24,10 +24,8 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
 
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
-    <!--font awesome-->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Saira+Condensed:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <!--fontes Rajdhani e Saira Condensed hospedadas no proprio sistema (sem Google Fonts: SRI e LGPD)-->
+    <link rel="stylesheet" href="ASSETS/FONTES/fontes.css">
 
     <!--style-->
     <link rel="stylesheet" href="ASSETS/CSS/loginStyle.css">

@@ -66,6 +66,16 @@ final class TelasEAcoesTest extends TesteFuncional
         $this->assertArrayNotHasKey('x-powered-by', $c);
     }
 
+    public function testLoginNaoCarregaNadaDeOutrosSites(): void
+    {
+        //fontes locais: sem Google Fonts (SRI impossivel e IP do visitante enviado ao Google)
+        $resposta = (new Navegador())->get('index.php');
+        $this->assertDoesNotMatchRegularExpression('/(href|src)="https?:\/\//', $resposta['corpo']);
+        $this->assertStringNotContainsString('googleapis', $resposta['cabecalhos']['content-security-policy'][0] ?? '');
+        $this->assertStringNotContainsString('gstatic', $resposta['cabecalhos']['content-security-policy'][0] ?? '');
+        $this->assertSame(200, (new Navegador())->get('ASSETS/FONTES/fontes.css')['status']);
+    }
+
     public function testPoliticaDePrivacidadeEhPublica(): void
     {
         $resposta = (new Navegador())->get('privacidade.php');

@@ -12,7 +12,7 @@ Roda o sistema igual em qualquer computador, sem instalar XAMPP, drivers nem SQL
 | Container | O que é |
 |---|---|
 | `banco` | SQL Server 2022 Express (imagem oficial da Microsoft). Os dados ficam no volume `dados-sqlserver`. |
-| `banco-init` | Roda uma vez a cada subida: cria o banco (se não existir), aplica `DB/` e acerta o usuário `gkt_app`. |
+| `banco-init` | Roda uma vez a cada subida (`docker/iniciar-banco.php`): cria o banco (se não existir), aplica `DB/` e acerta o usuário `gkt_app`. |
 | `app` | PHP 8.2 + Apache + drivers, com as mesmas proteções do XAMPP. Em http://127.0.0.1:8080 |
 | `testes` | Só quando pedido: roda os testes automatizados num banco separado (`gktgym_teste`). |
 | `zap` | Só quando pedido: OWASP ZAP, varredura de segurança contra o `app`. |
@@ -54,10 +54,18 @@ echo "SA: $(openssl rand -base64 18)Aa1-"; echo "APP: $(openssl rand -base64 18)
 
 ## 3. Subir o sistema
 
+Construa as imagens e suba (a primeira vez demora: baixa ~2 GB):
 ```bash
-docker compose -f docker/docker-compose.yml up -d --build
+bash docker/construir.sh
 ```
-A primeira vez demora (baixa ~2 GB). Acompanhe a criação do banco com:
+```bash
+docker compose -f docker/docker-compose.yml up -d --wait app
+```
+O `construir.sh` usa a rede do próprio computador: em alguns provedores os servidores da Microsoft só respondem
+por IPv6, e a rede padrão dos containers só tem IPv4 (foi o caso no Debian da academia). Em redes sem esse
+problema, `docker compose -f docker/docker-compose.yml up -d --build` também funciona.
+
+Acompanhe a criação do banco com:
 ```bash
 docker compose -f docker/docker-compose.yml logs -f banco-init
 ```
@@ -101,7 +109,7 @@ testes funcionais (`tests/Funcional`), que simulam força bruta, CSRF, XSS, inje
 | Para | Comando (sempre com `-f docker/docker-compose.yml`) |
 |---|---|
 | Parar tudo | `docker compose -f docker/docker-compose.yml down` |
-| Atualizar depois de um `git pull` | `docker compose -f docker/docker-compose.yml up -d --build` |
+| Atualizar depois de um `git pull` | `bash docker/construir.sh` e depois `docker compose -f docker/docker-compose.yml up -d --wait app` |
 | Ver erros do PHP/Apache | `docker compose -f docker/docker-compose.yml logs -f app` |
 | Backup do banco | `docker compose -f docker/docker-compose.yml exec banco /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "BACKUP DATABASE gktgym TO DISK='/var/opt/mssql/gktgym.bak' WITH INIT"` (rode `source docker/.env` antes) |
 | **Apagar tudo, inclusive o banco** | `docker compose -f docker/docker-compose.yml down -v` (irreversível) |
