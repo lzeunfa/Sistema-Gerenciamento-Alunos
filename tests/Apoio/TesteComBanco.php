@@ -61,6 +61,7 @@ abstract class TesteComBanco extends TestCase
         return (int) $codigo;
     }
 
+    /** @return array<string, mixed> linha da tabela ALUNOS (vazia se nao existir) */
     protected function linhaAluno(string $matricula): array
     {
         $stmt = Database::getConexao()->prepare("SELECT * FROM ALUNOS WHERE ALUMATRICULA = :m");

@@ -36,6 +36,8 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
   e varredura de segurança com OWASP ZAP. Passo a passo para Debian em `docker/README.md`. O CI roda todos os testes
   nos containers.
 - `config.php` aceita a configuração do banco por variáveis de ambiente quando não há `.env`.
+- Varredura OWASP ZAP logada como administrador (`docker/varredura-autenticada.sh`).
+- `robots.txt` pedindo aos buscadores para não indexar o sistema.
 - Botões **Editar**, **Exportar dados** e **Excluir** nas listas de Alunos e Turmas (direitos do titular, LGPD art. 18).
   Exportar baixa um JSON com todos os dados e inscrições do aluno; Excluir anonimiza os dados pessoais e mantém
   matrícula e inscrições para estatística.
@@ -46,6 +48,13 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - Aluno cadastrado já como INATIVO ficava sem data de inativação e nunca entrava na retenção de 5 anos.
 - Erro de modalidade inexistente na edição aparecia como "CPF ou e-mail já pertence a outro aluno".
 - Matrícula com quebra de linha no final passava pela validação.
+
+### Segurança
+- Achados do OWASP ZAP corrigidos: CSP também nas páginas de erro do Apache; cabeçalhos
+  `Cross-Origin-Resource-Policy`, `Cross-Origin-Embedder-Policy` e `Permissions-Policy` em todas as respostas.
+- Fontes da tela de login hospedadas no próprio sistema: sem Google Fonts, a página não carrega nada de outros
+  sites e o IP do visitante deixa de ser enviado ao Google (LGPD). A CSP ficou mais restrita.
+- No container, a versão do Apache não aparece mais nos cabeçalhos nem nas páginas de erro.
 
 ### Alterado
 - Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.

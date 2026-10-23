@@ -119,64 +119,52 @@ function listarStatus()
      $status = $stmt->fetchAll(PDO::FETCH_ASSOC);
      return $status;
 }
-function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
-{
-     $pdo = Database::getConexao();
-
-     // 1. Iniciamos a variável vazia
-     $clausulaWhere = "";
-
-     // 2. Preenchemos a regra de acordo com o que veio da tela
-     if (is_numeric($filtro)) {
-          // Filtro por ID da modalidade
-          $clausulaWhere = " WHERE I.ALUNOMOD = " . intval($filtro) . " ";
-     } else {
-          switch ($filtro) {
-               case 'alunos_pendentes':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PENDENTE' ";
-                    break;
-               case 'alunos_pagos':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PAGO' ";
-                    break;
-               case 'alunos_homens':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'M' ";
-                    break;
-               case 'alunos_mulheres':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'F' ";
-                    break;
-               case 'plano_2':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%2X%' ";
-                    break;
-               case 'plano_3':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%3X%' ";
-                    break;
-               case 'plano_4':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%4X%' ";
-                    break;
-          }
-     }
-
-     // 3. Colocamos o $clausulaWhere ANTES do GROUP BY no SQL
-     $sql = "SELECT 
-                 A.ALUMATRICULA, 
-                 A.DATACADASTRO,
-                 A.ALUNOME, 
-                 A.ALUCPF, 
-                 STRING_AGG(M.NOMEMOD, ', ') AS ARTES, 
-                 P.PLANO, 
-                 O.OPCAO AS FREQUENCIA,
-                 S.STATUSALU AS SITUACAO,
-                 A.ALUANONIMIZADO
-                          FROM ALUNOS A
+//junta aluno, inscricoes e tabelas de apoio; usado pela lista e pela contagem (as duas precisam bater)
+const FROM_ALUNOS_COMPLETOS = "FROM ALUNOS A
              INNER JOIN ALUNOS_INSCRICAO I ON A.ALUMATRICULA = I.ALUNOMAT
              INNER JOIN MODALIDADES M ON I.ALUNOMOD = M.MODALIDADECOD
              INNER JOIN PLANOS P ON I.ALUNOPLANO = P.PLANOCOD
              INNER JOIN ALUNOS_STATUS S ON A.ALUSTATUS = S.STATUSCOD
-             INNER JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD
-             
-             $clausulaWhere 
-             
-             GROUP BY 
+             INNER JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD";
+
+//filtros das telas Alunos e Turmas. Lista fixa (whitelist): texto desconhecido = sem filtro.
+//Numero = codigo da modalidade (tela Turmas), passado como parametro.
+//Devolve [clausula WHERE, parametros].
+function filtroAlunos($filtro): array
+{
+     if (is_string($filtro) && ctype_digit($filtro)) {
+          return [" WHERE I.ALUNOMOD = :modalidade ", [':modalidade' => (int) $filtro]];
+     }
+     $filtros = [
+          'alunos_pendentes' => "S.STATUSALU = 'PENDENTE'",
+          'alunos_pagos' => "S.STATUSALU = 'PAGO'",
+          'alunos_homens' => "A.ALUSEX = 'M'",
+          'alunos_mulheres' => "A.ALUSEX = 'F'",
+          'plano_2' => "O.OPCAO LIKE '%2X%'",
+          'plano_3' => "O.OPCAO LIKE '%3X%'",
+          'plano_4' => "O.OPCAO LIKE '%4X%'",
+     ];
+     return is_string($filtro) && isset($filtros[$filtro]) ? [" WHERE {$filtros[$filtro]} ", []] : ["", []];
+}
+
+function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
+{
+     $pdo = Database::getConexao();
+     [$clausulaWhere, $parametros] = filtroAlunos($filtro);
+
+     $sql = "SELECT
+                 A.ALUMATRICULA,
+                 A.DATACADASTRO,
+                 A.ALUNOME,
+                 A.ALUCPF,
+                 STRING_AGG(M.NOMEMOD, ', ') AS ARTES,
+                 P.PLANO,
+                 O.OPCAO AS FREQUENCIA,
+                 S.STATUSALU AS SITUACAO,
+                 A.ALUANONIMIZADO
+             " . FROM_ALUNOS_COMPLETOS . "
+             $clausulaWhere
+             GROUP BY
                  A.ALUMATRICULA, A.DATACADASTRO, A.ALUNOME, A.ALUCPF, P.PLANO, O.OPCAO, S.STATUSALU, A.ALUANONIMIZADO
              ORDER BY A.ALUMATRICULA DESC";
 
@@ -185,65 +173,28 @@ function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
      }
 
      $stmt = $pdo->prepare($sql);
-
+     foreach ($parametros as $nome => $valor) {
+          $stmt->bindValue($nome, $valor, PDO::PARAM_INT);
+     }
      if ($limite !== null && $offset !== null) {
           $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
           $stmt->bindValue(':limite', (int)$limite, PDO::PARAM_INT);
      }
-
      $stmt->execute();
-
-     // O FETCH_ASSOC transforma os dados em um array associativo
-     $alunos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-     return $alunos;
+     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function contarAlunosCompletos($filtro = "")
 {
      $pdo = Database::getConexao();
-     $clausulaWhere = "";
+     [$clausulaWhere, $parametros] = filtroAlunos($filtro);
 
-     if (is_numeric($filtro)) {
-          $clausulaWhere = " WHERE I.ALUNOMOD = " . intval($filtro) . " ";
-     } else {
-          switch ($filtro) {
-               case 'alunos_pendentes':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PENDENTE' ";
-                    break;
-               case 'alunos_pagos':
-                    $clausulaWhere = " WHERE S.STATUSALU = 'PAGO' ";
-                    break;
-               case 'alunos_homens':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'M' ";
-                    break;
-               case 'alunos_mulheres':
-                    $clausulaWhere = " WHERE A.ALUSEX = 'F' ";
-                    break;
-               case 'plano_2':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%2X%' ";
-                    break;
-               case 'plano_3':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%3X%' ";
-                    break;
-               case 'plano_4':
-                    $clausulaWhere = " WHERE O.OPCAO LIKE '%4X%' ";
-                    break;
-          }
+     $stmt = $pdo->prepare("SELECT COUNT(DISTINCT A.ALUMATRICULA) AS total " . FROM_ALUNOS_COMPLETOS . " $clausulaWhere");
+     foreach ($parametros as $nome => $valor) {
+          $stmt->bindValue($nome, $valor, PDO::PARAM_INT);
      }
-
-     $sql = "SELECT COUNT(DISTINCT A.ALUMATRICULA) AS total
-             FROM ALUNOS A
-             INNER JOIN ALUNOS_INSCRICAO I ON A.ALUMATRICULA = I.ALUNOMAT
-             INNER JOIN MODALIDADES M ON I.ALUNOMOD = M.MODALIDADECOD
-             INNER JOIN PLANOS P ON I.ALUNOPLANO = P.PLANOCOD
-             INNER JOIN ALUNOS_STATUS S ON A.ALUSTATUS = S.STATUSCOD
-             INNER JOIN OPCAOSEMANA O ON I.ALUNOOPCAO = O.OPCAOCOD
-             $clausulaWhere";
-
-     $stmt = $pdo->prepare($sql);
      $stmt->execute();
      $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-     
      return $resultado ? (int)$resultado['total'] : 0;
 }
 // ---------- Validacao dos dados do aluno (cadastro e edicao usam as mesmas regras) ----------

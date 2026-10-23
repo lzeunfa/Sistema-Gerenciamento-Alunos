@@ -1,46 +1,42 @@
 # Plano do OWASP ZAP (Automation Framework) para varrer o sistema LOGADO como administrador.
-# Rodado por docker/varredura-autenticada.sh, que cria e apaga o administrador temporario.
-# So ataca o container "app" desta rede do Docker.
+# Rodado por docker/varredura-autenticada.sh, que faz o login, passa o cookie de sessao em ZAP_COOKIE
+# e no fim apaga o administrador temporario. So ataca o container "app" desta rede do Docker.
 env:
   contexts:
     - name: gkt
       urls:
-        - http://app/
+        - http://app/sistema.php
       includePaths:
         - "http://app/.*"
       excludePaths:
-        # nao sair da sessao nem bloquear a conta por tentativas de login durante a varredura
+        # nao encerrar a sessao nem gerar bloqueio de login durante a varredura
         - "http://app/logout\\.php.*"
         - "http://app/BACKEND/CONTROLLER/actions\\.php.*"
-      authentication:
-        method: browser
-        parameters:
-          loginPageUrl: http://app/index.php
-          loginPageWait: 5
-          browserId: firefox-headless
-        verification:
-          method: poll
-          loggedInRegex: "Total de alunos"
-          loggedOutRegex: "Entre com suas credenciais"
-          pollFrequency: 50
-          pollUnits: requests
-          pollUrl: http://app/sistema.php
-      sessionManagement:
-        method: autodetect
-      users:
-        - name: admin-zap
-          credentials:
-            username: ${ZAP_USUARIO}
-            password: ${ZAP_SENHA}
+        - "http://app/index\\.php.*"
   parameters:
     failOnError: true
     progressToStdout: true
 
 jobs:
+  # toda requisicao do ZAP leva o cookie da sessao do administrador temporario
+  - type: replacer
+    rules:
+      - description: sessao do administrador temporario
+        url: "http://app/.*"
+        matchType: req_header
+        matchString: Cookie
+        matchRegex: false
+        replacementString: ${ZAP_COOKIE}
+  - type: requestor
+    requests:
+      - url: http://app/sistema.php?pagina=DASHBOARD
+      - url: http://app/sistema.php?pagina=ALUNOS
+      - url: http://app/sistema.php?pagina=TURMAS
+      - url: http://app/sistema.php?pagina=CADASTRAR
   - type: spider
     parameters:
       context: gkt
-      user: admin-zap
+      url: http://app/sistema.php
       maxDuration: 5
   - type: passiveScan-wait
     parameters:
@@ -48,7 +44,6 @@ jobs:
   - type: activeScan
     parameters:
       context: gkt
-      user: admin-zap
       maxRuleDurationInMins: 5
       maxScanDurationInMins: 45
   - type: report

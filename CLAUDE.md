@@ -98,5 +98,4 @@ Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAM
 - `vendor/` fica dentro do site: o `.htaccess` bloqueia; não remova essa regra.
 - Windows não diferencia maiúsculas: regras do `.htaccess` usam `(?i)`.
 - Cookie de sessão é `SameSite=Lax` de propósito: `Strict` desloga quem abre o sistema por um link (ver DOC/DECISOES.md).
-- `DB/update_db.php` é antigo e conflita com o esquema atual (`ALUSTATUS` é `int`). Não rode.
 - Revisão de PR: use a skill `/revisar-pr`.

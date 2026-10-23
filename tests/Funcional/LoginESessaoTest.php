@@ -67,6 +67,16 @@ final class LoginESessaoTest extends TesteFuncional
         $this->assertSame(302, $this->nav->get('sistema.php')['status'], 'continua sem login');
     }
 
+    public function testCamposDoLoginEnviadosComoListaSaoTratadosComoVazios(): void
+    {
+        //ferramentas de ataque mandam inputUser[]=x; antes isso causava TypeError no trim() (erro 500)
+        $token = Navegador::token($this->nav->get('index.php')['corpo']);
+        $resposta = $this->nav->post('BACKEND/CONTROLLER/actions.php', ['csrf_token' => $token, 'inputUser' => ['admin'], 'inputUserPass' => ['x']]);
+        $this->assertSame(302, $resposta['status']);
+        $this->assertSame('/index.php', $this->destino($resposta));
+        $this->assertSame('Preencha usuário e senha!', Navegador::mensagem($this->nav->get('index.php')['corpo']));
+    }
+
     public function testAbrirOActionsPeloNavegadorNaoFazLogin(): void
     {
         $this->assertSame('/index.php', $this->destino($this->nav->get('BACKEND/CONTROLLER/actions.php')));

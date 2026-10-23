@@ -92,7 +92,7 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
         </table>
 
         <div class="paginacao d-flex justify-content-center mt-4">
-            <?php if (isset($total_paginas) && $total_paginas > 1): ?>
+            <?php if ($total_paginas > 1): ?>
                 <nav aria-label="Navegação de página">
                     <ul class="pagination">
                         <li class="page-item <?= ($pagina_atual <= 1) ? 'disabled' : '' ?>">

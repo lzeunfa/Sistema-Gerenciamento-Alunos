@@ -86,6 +86,28 @@ final class ValidacaoAlunoTest extends TestCase
         $this->assertSame('', campo('inexistente'));
     }
 
+    // ---------- filtroAlunos (telas Alunos e Turmas) ----------
+
+    public function testFiltrosConhecidosViramClausulaFixa(): void
+    {
+        $this->assertSame([" WHERE S.STATUSALU = 'PAGO' ", []], filtroAlunos('alunos_pagos'));
+        $this->assertSame([" WHERE O.OPCAO LIKE '%3X%' ", []], filtroAlunos('plano_3'));
+    }
+
+    public function testModalidadeVaiComoParametroENaoNoTextoDoSql(): void
+    {
+        [$where, $parametros] = filtroAlunos('4');
+        $this->assertStringNotContainsString('4', $where);
+        $this->assertSame([':modalidade' => 4], $parametros);
+    }
+
+    public function testFiltroDesconhecidoOuMaliciosoNaoFiltraNada(): void
+    {
+        foreach (['', 'qualquer', "1 OR 1=1", "1; DROP TABLE ALUNOS", '1.5', '-1', ' 1', ['1'], null] as $filtro) {
+            $this->assertSame(['', []], filtroAlunos($filtro), json_encode($filtro));
+        }
+    }
+
     // ---------- lerAlunoDoPost ----------
 
     private function postValido(array $mudancas = []): array

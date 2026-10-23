@@ -14,7 +14,9 @@ final class ConfiguracaoApacheTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         $url = parse_url(self::base());
-        $socket = @fsockopen($url['host'], $url['port'] ?? 80, $errno, $errstr, 1);
+        //no Windows "localhost" pode virar ::1 (IPv6) e o Apache do XAMPP so escuta em 127.0.0.1
+        $host = $url['host'] === 'localhost' ? '127.0.0.1' : $url['host'];
+        $socket = @fsockopen($host, $url['port'] ?? 80, $errno, $errstr, 1);
         if (!$socket) {
             self::markTestSkipped('Apache não está respondendo em ' . self::base());
         }

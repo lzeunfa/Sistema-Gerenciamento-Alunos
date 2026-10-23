@@ -2,8 +2,9 @@
 require_once(__DIR__ . '/../SEGURANCA/seguranca.php');
 exigirPostComCsrf('../../index.php');
 
-$userName = trim($_POST['inputUser'] ?? '');
-$userPass = $_POST['inputUserPass'] ?? '';
+//campo enviado como lista (inputUser[]=x) vira vazio; trim() de array derrubava a pagina com erro 500
+$userName = is_string($_POST['inputUser'] ?? null) ? trim($_POST['inputUser']) : '';
+$userPass = is_string($_POST['inputUserPass'] ?? null) ? $_POST['inputUserPass'] : '';
 
 function voltarAoLogin(string $mensagem): void
 {
@@ -12,7 +13,7 @@ function voltarAoLogin(string $mensagem): void
     exit();
 }
 
-if (!is_string($userName) || !is_string($userPass) || $userName === '' || $userPass === '' || strlen($userName) > 100 || strlen($userPass) > 128) {
+if ($userName === '' || $userPass === '' || strlen($userName) > 100 || strlen($userPass) > 128) {
     voltarAoLogin("Preencha usuário e senha!");
 }
 
