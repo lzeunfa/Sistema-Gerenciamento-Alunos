@@ -77,6 +77,7 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
   cópia do sistema ligada ao banco de teste; os dados e a auditoria do banco real não são tocados.
 
 ### Alterado
+- Ao clicar num campo já preenchido (tela Editar), o cursor vai para o final do texto em vez do começo.
 - Frequências de treino de 1x a 5x por semana, listadas em ordem no cadastro; modalidades e planos da academia nos dados iniciais.
 - Filtro "Pendentes" mostra só a situação `PENDENTE` (antes incluía qualquer situação diferente de `PAGO`).
 

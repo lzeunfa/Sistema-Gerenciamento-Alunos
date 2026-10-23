@@ -51,6 +51,14 @@ final class TelasEAcoesTest extends TesteFuncional
         }
     }
 
+    public function testTelasInternasCarregamOScriptQuePoeOCursorNoFimDoCampo(): void
+    {
+        //ao clicar num campo ja preenchido (Editar), o cursor vai para o fim do texto (ASSETS/JS/formulario.js)
+        $html = $this->nav->get('sistema.php?pagina=EDITAR&matricula=' . $this->matriculaCadastrada())['corpo'];
+        $this->assertStringContainsString('<script src="ASSETS/JS/formulario.js"></script>', $html);
+        $this->assertStringContainsString('setSelectionRange', file_get_contents(RAIZ_PROJETO . '/ASSETS/JS/formulario.js'));
+    }
+
     public function testPaginaDesconhecidaOuMaliciosaAbreODashboard(): void
     {
         foreach (['NAOEXISTE', '../../.env', '../trava', 'dashboard'] as $pagina) {
