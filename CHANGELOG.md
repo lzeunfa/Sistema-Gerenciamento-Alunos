@@ -32,6 +32,10 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - CI no GitHub Actions: checagem de sintaxe PHP, análise estática (PHPStan), busca de senhas vazadas e auditoria de dependências.
 - Testes automatizados com PHPUnit (216 testes): unidade, integração com banco de teste, funcionais e configuração do Apache.
   O CI roda os de unidade. Como rodar: `tests/README.md`.
+- Ambiente Docker (`docker/`): PHP 8.2 + Apache + SQL Server 2022 com `docker compose`, testes dentro do container
+  e varredura de segurança com OWASP ZAP. Passo a passo para Debian em `docker/README.md`. O CI roda todos os testes
+  nos containers.
+- `config.php` aceita a configuração do banco por variáveis de ambiente quando não há `.env`.
 - Botões **Editar**, **Exportar dados** e **Excluir** nas listas de Alunos e Turmas (direitos do titular, LGPD art. 18).
   Exportar baixa um JSON com todos os dados e inscrições do aluno; Excluir anonimiza os dados pessoais e mantém
   matrícula e inscrições para estatística.

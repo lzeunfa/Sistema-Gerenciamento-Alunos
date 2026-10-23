@@ -47,6 +47,14 @@ pwsh tests/preparar_banco_teste.ps1
 C:\xampp\php\php.exe vendor\bin\phpunit
 ```
 
+Em Docker (Debian, detalhes em docker/README.md):
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build                       # sistema em http://127.0.0.1:8080
+docker compose -f docker/docker-compose.yml --profile testes run --rm testes    # todos os testes
+docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap    # varredura OWASP ZAP
+```
+
 Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAMPP escuta só em 127.0.0.1).
 
 ## Regras obrigatórias
@@ -82,6 +90,8 @@ Sistema local: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/ (Apache do XAM
 - Bug corrigido ou regra nova → teste novo que falharia sem a mudança (ver tests/README.md).
 
 ## Armadilhas conhecidas
+- O código roda em Windows (XAMPP) e Linux (Docker): caminhos de arquivo com as maiúsculas exatas do nome real; scripts `.sh` com LF.
+- Configuração do banco: `.env` na raiz (XAMPP) ou variáveis de ambiente (Docker). Chave nova? Coloque nos dois `.env.example` e no `docker-compose.yml`.
 - O `php` do PATH é o 8.5 do usuário (sem driver SQL Server). Para o sistema use sempre `C:\xampp\php\php.exe` (8.2).
 - `composer install` falha com "zip extension missing" nos dois PHPs. Use:
   `C:\xampp\php\php.exe -d extension=zip C:\ProgramData\ComposerSetup\bin\composer.phar install`

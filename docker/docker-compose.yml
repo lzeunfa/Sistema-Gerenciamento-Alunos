@@ -1,0 +1,79 @@
+# Sistema GKT em containers. Passo a passo: docker/README.md
+#
+#   docker compose -f docker/docker-compose.yml up -d --build                 sistema em http://127.0.0.1:8080
+#   docker compose -f docker/docker-compose.yml --profile testes run --rm testes      216 testes automatizados
+#   docker compose -f docker/docker-compose.yml --profile seguranca run --rm zap      varredura OWASP ZAP
+#
+# As senhas vem de docker/.env (copie de docker/.env.example). Esse arquivo nunca vai para o Git.
+
+name: gkt
+
+services:
+  banco:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:?defina SA_PASSWORD em docker/.env}
+    volumes:
+      - dados-sqlserver:/var/opt/mssql
+    # sem "ports": o banco so e acessivel pelos outros containers, nunca pela rede
+    restart: unless-stopped
+
+  banco-init:
+    build: { context: .., dockerfile: docker/Dockerfile, target: producao }
+    image: gkt-app:producao
+    command: ["bash", "docker/iniciar-banco.sh"]
+    environment: &banco-env
+      DB_CONNECTION: sqlsrv
+      DB_HOST: banco
+      DB_PORT: "1433"
+      DB_DATABASE: gktgym
+      DB_USERNAME: gkt_app
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD em docker/.env}
+      DB_TRUST_CERT: "1"
+      SA_PASSWORD: ${SA_PASSWORD}
+    depends_on: [banco]
+    restart: "no"
+
+  app:
+    image: gkt-app:producao
+    environment:
+      DB_CONNECTION: sqlsrv
+      DB_HOST: banco
+      DB_PORT: "1433"
+      DB_DATABASE: gktgym
+      DB_USERNAME: gkt_app
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_TRUST_CERT: "1"
+    ports:
+      # so este computador acessa; para liberar na rede, troque por "8080:80" e use HTTPS
+      - "127.0.0.1:${PORTA_APP:-8080}:80"
+    depends_on:
+      banco-init: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  testes:
+    profiles: [testes]
+    build: { context: .., dockerfile: docker/Dockerfile, target: testes }
+    image: gkt-app:testes
+    environment:
+      <<: *banco-env
+      GKT_DB_DATABASE: gktgym_teste
+      GKT_URL_APACHE: http://app/
+    depends_on:
+      app: { condition: service_healthy }
+
+  zap:
+    profiles: [seguranca]
+    image: ghcr.io/zaproxy/zaproxy:stable
+    # varredura ATIVA, apenas contra o container "app" desta rede (dados ficticios do banco gktgym)
+    command: ["zap-full-scan.py", "-t", "http://app/", "-r", "zap-relatorio.html", "-J", "zap-relatorio.json", "-I", "-m", "5"]
+    user: root
+    volumes:
+      - ../relatorios:/zap/wrk:rw
+    depends_on:
+      app: { condition: service_healthy }
+
+volumes:
+  dados-sqlserver:

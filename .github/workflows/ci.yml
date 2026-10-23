@@ -61,8 +61,24 @@ jobs:
           php-version: "8.2"
           tools: composer
       - run: composer install --no-interaction --no-progress
-      # integracao, funcional e Apache precisam de SQL Server e XAMPP: rodam na maquina local (tests/README.md)
       - run: vendor/bin/phpunit --testsuite unidade
+
+  docker:
+    name: Todos os testes em Docker (SQL Server + Apache)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Senhas descartaveis so para esta execucao
+        run: |
+          echo "SA_PASSWORD=Ci-$(openssl rand -hex 12)-Aa1" > docker/.env
+          echo "DB_PASSWORD=Ci-$(openssl rand -hex 12)-Bb2" >> docker/.env
+      - name: Construir e subir banco e sistema
+        run: docker compose -f docker/docker-compose.yml up -d --build --wait app
+      - name: Testes de unidade, integracao, funcionais e do Apache
+        run: docker compose -f docker/docker-compose.yml --profile testes run --rm testes
+      - name: Logs dos containers (se falhar)
+        if: failure()
+        run: docker compose -f docker/docker-compose.yml logs --no-color
 
   segredos:
     name: Senhas e chaves vazadas

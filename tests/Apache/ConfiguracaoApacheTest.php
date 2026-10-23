@@ -5,20 +5,25 @@ use PHPUnit\Framework\TestCase;
 //Regras do .htaccess e configuracao do Apache do XAMPP. So faz leituras (GET), nao altera dados.
 final class ConfiguracaoApacheTest extends TestCase
 {
-    private const BASE = 'http://localhost/Gkt/Sistema-Gerenciamento-Alunos/';
+    //XAMPP: http://localhost/Gkt/Sistema-Gerenciamento-Alunos/  |  Docker: GKT_URL_APACHE=http://app/
+    private static function base(): string
+    {
+        return rtrim(getenv('GKT_URL_APACHE') ?: 'http://localhost/Gkt/Sistema-Gerenciamento-Alunos/', '/') . '/';
+    }
 
     public static function setUpBeforeClass(): void
     {
-        $socket = @fsockopen('127.0.0.1', 80, $errno, $errstr, 1);
+        $url = parse_url(self::base());
+        $socket = @fsockopen($url['host'], $url['port'] ?? 80, $errno, $errstr, 1);
         if (!$socket) {
-            self::markTestSkipped('Apache do XAMPP não está rodando na porta 80.');
+            self::markTestSkipped('Apache não está respondendo em ' . self::base());
         }
         fclose($socket);
     }
 
     private function get(string $caminho): array
     {
-        return (new Navegador())->get($caminho, self::BASE);
+        return (new Navegador())->get($caminho, self::base());
     }
 
     public static function arquivosInternos(): array
@@ -31,6 +36,7 @@ final class ConfiguracaoApacheTest extends TestCase
             'ASSETS/PAGINAS/ALUNOS.php', 'ASSETS/PAGINAS/_acoesAluno.php', 'trava.php',
             'vendor/autoload.php', 'composer.json', 'composer.lock', 'phpstan.neon', 'phpunit.xml',
             'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1',
+            'docker/Dockerfile', 'docker/docker-compose.yml', 'docker/iniciar-banco.sh', 'docker/.env.example', '.dockerignore',
         ]);
     }
 

@@ -82,3 +82,13 @@ apagados, nascimento reduzido a 1º de janeiro do mesmo ano. Matrícula, sexo e 
 **Consequências:** não dá para desfazer (exporte antes, se o aluno pedir cópia). Aluno anonimizado não pode ser
 editado nem exportado. A `AUDITORIA` guarda só a matrícula, então não reidentifica ninguém. Os valores novos são
 únicos porque CPF e e-mail têm `UNIQUE` no banco.
+
+## D-010 — Docker para rodar igual em qualquer máquina
+**Data:** 2026-10-22 · **Situação:** Aceita
+**Contexto:** o ambiente dependia de XAMPP 8.2, drivers do SQL Server e configurações feitas à mão no Windows
+("na minha máquina funciona"); o WSL não funciona na máquina de desenvolvimento.
+**Decisão:** `docker/` com a imagem `php:8.2-apache-bookworm` + drivers da Microsoft e o SQL Server 2022 oficial,
+orquestrados pelo `docker compose`. Sem `.env`, o `config.php` lê as mesmas chaves das variáveis de ambiente.
+**Consequências:** senhas ficam em `docker/.env` (fora do Git e da imagem). O banco não é exposto na rede. Scripts
+`.sh` precisam de quebra de linha LF (`.gitattributes`). O CI sobe os containers e roda todos os testes no Linux.
+O XAMPP continua funcionando como antes.

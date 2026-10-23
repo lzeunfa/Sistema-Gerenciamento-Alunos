@@ -5,33 +5,54 @@ class Database
     private function __construct()
     {
     }
+
+    //Le a configuracao do banco: do arquivo .env na raiz (XAMPP) ou, se ele nao existir,
+    //das variaveis de ambiente (container Docker, ver docker/README.md).
+    public static function configuracao(): array
+    {
+        $chaves = ['DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD', 'DB_TRUST_CERT'];
+        $caminhoEnv = dirname(__DIR__, 2) . '/.env';
+
+        if (file_exists($caminhoEnv)) {
+            $arquivoEnv = parse_ini_file($caminhoEnv) ?: [];
+        } else {
+            $arquivoEnv = [];
+            foreach ($chaves as $chave) {
+                if (getenv($chave) !== false) {
+                    $arquivoEnv[$chave] = getenv($chave);
+                }
+            }
+        }
+
+        foreach (['DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD'] as $obrigatoria) {
+            if (!isset($arquivoEnv[$obrigatoria])) {
+                error_log("Configuracao do banco incompleta: falta $obrigatoria (.env ou variavel de ambiente)");
+                die("Configuração do banco incompleta.");
+            }
+        }
+
+        //os testes automatizados apontam para o banco gktgym_teste por esta variavel (ver tests/README.md)
+        $arquivoEnv['DB_DATABASE'] = getenv('GKT_DB_DATABASE') ?: $arquivoEnv['DB_DATABASE'];
+        return $arquivoEnv;
+    }
+
     public static function getConexao()
     {
         if (self::$conn === null) { //testa se e nulo e do mesmo tipo.
-            $caminhoEnv = dirname(__DIR__, 2) . '/.env';
-
-            if (!file_exists($caminhoEnv)) { //Se ele for false(diferente de verdadeiro) morre na hora.
-                die("Nao encontrei o  .env " . $caminhoEnv);
-            }
-
-            $arquivoEnv = parse_ini_file($caminhoEnv); //Ler  meu arquivo .env
-            //Ao ler, pegar os dados do Banco.
-            $db_conn = $arquivoEnv["DB_CONNECTION"];
-            $db_host = $arquivoEnv["DB_HOST"];
-            $db_port = $arquivoEnv["DB_PORT"];
-            //os testes automatizados apontam para o banco gktgym_teste por esta variavel (ver tests/README.md)
-            $db_name = getenv('GKT_DB_DATABASE') ?: $arquivoEnv["DB_DATABASE"];
-            $db_user = $arquivoEnv["DB_USERNAME"];
-            $db_pass = $arquivoEnv["DB_PASSWORD"];
+            $c = self::configuracao();
             //host,porta e nome do banco.
-            $dsn = "$db_conn:Server=$db_host,$db_port;Database=$db_name";
+            $dsn = "{$c['DB_CONNECTION']}:Server={$c['DB_HOST']},{$c['DB_PORT']};Database={$c['DB_DATABASE']}";
+            //o driver ODBC 18 (container) exige certificado confiavel; dentro da rede do Docker o do SQL Server e autoassinado
+            if (!empty($c['DB_TRUST_CERT'])) {
+                $dsn .= ';TrustServerCertificate=1';
+            }
             $opcoes = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
             try {
-                self::$conn = new PDO($dsn, $db_user, $db_pass, $opcoes);
+                self::$conn = new PDO($dsn, $c['DB_USERNAME'], $c['DB_PASSWORD'], $opcoes);
             } catch (PDOException $error) {
                 self::tratarErroConexao($error);
             }
