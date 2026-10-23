@@ -1,0 +1,5 @@
+# Falsos positivos do gitleaks (CI "Senhas e chaves vazadas"). Um alerta por linha, com o motivo acima.
+# So entra aqui o que for comprovadamente texto de exemplo. Senha real vazada: troque a senha, nunca ignore.
+
+# docker/.env.example tinha "Troque-Esta-Senha-SA-1" como valor de exemplo (trocado por vazio no commit 34dbb0b)
+b00597de76a093a473d14496648a2a13a6106747:docker/.env.example:generic-api-key:7
