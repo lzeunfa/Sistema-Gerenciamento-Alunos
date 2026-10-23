@@ -42,11 +42,11 @@ echo ">>> Cadastrando alunos ficticios para a varredura"
 echo ">>> Entrando no sistema com o administrador temporario"
 ZAP_COOKIE=$("${COMPOSE[@]}" exec -T -e ZAP_USUARIO -e ZAP_SENHA app bash -c '
     pote=$(mktemp)
-    token=$(curl -s -c "$pote" -b "$pote" http://127.0.0.1/index.php | sed -n "s/.*name=\"csrf_token\" value=\"\([^\"]*\)\".*/\1/p")
-    curl -s -o /dev/null -c "$pote" -b "$pote" --data-urlencode "csrf_token=$token" \
+    token=$(curl -sk -c "$pote" -b "$pote" https://127.0.0.1/index.php | sed -n "s/.*name=\"csrf_token\" value=\"\([^\"]*\)\".*/\1/p")
+    curl -sk -o /dev/null -c "$pote" -b "$pote" --data-urlencode "csrf_token=$token" \
          --data-urlencode "inputUser=$ZAP_USUARIO" --data-urlencode "inputUserPass=$ZAP_SENHA" \
-         http://127.0.0.1/BACKEND/CONTROLLER/actions.php
-    if curl -s -b "$pote" http://127.0.0.1/sistema.php | grep -q "Total de alunos"; then
+         https://127.0.0.1/BACKEND/CONTROLLER/actions.php
+    if curl -sk -b "$pote" https://127.0.0.1/sistema.php | grep -q "Total de alunos"; then
         awk "\$6 == \"GKTSESSID\" {print \"GKTSESSID=\" \$7}" "$pote"
     fi
     rm -f "$pote"')

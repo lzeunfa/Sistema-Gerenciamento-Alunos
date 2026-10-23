@@ -1,4 +1,4 @@
-<!--html da pagina de edicao de aluno (LGPD art. 18, III: correcao de dados)-->
+<?php /* html da pagina de edicao de aluno (LGPD art. 18, III: correcao de dados) */ ?>
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
 $matricula = matriculaValida($_GET['matricula'] ?? null);
@@ -92,7 +92,7 @@ $mensagem = pegarMensagem();
                 <input type="text" class="form-input" id="endereco" name="endereco" value="<?= e($aluno['ALUENDERECO']) ?>" maxlength="150" required>
             </div>
 
-            <!-- Responsável legal (LGPD art. 14); é descartado se o aluno for maior de idade -->
+            <?php /* Responsável legal (LGPD art. 14); é descartado se o aluno for maior de idade */ ?>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="responsavel_nome">
@@ -156,7 +156,7 @@ $mensagem = pegarMensagem();
             </div>
 
             <?php if ($aluno['ALUCIENCIAPRIVACIDADE'] === null): ?>
-                <!-- cadastros antigos, feitos antes da Política de Privacidade (LGPD art. 9) -->
+                <?php /* cadastros antigos, feitos antes da Política de Privacidade (LGPD art. 9) */ ?>
                 <div class="form-group">
                     <div class="checkbox-option">
                         <input type="checkbox" id="ciencia_privacidade" name="ciencia_privacidade" value="1">
@@ -175,7 +175,7 @@ $mensagem = pegarMensagem();
         </form>
     </div>
 
-    <!-- Direitos do titular: acesso/portabilidade e eliminação -->
+    <?php /* Direitos do titular: acesso/portabilidade e eliminação */ ?>
     <div class="form-actions acoes-titular">
         <form method="POST" action="BACKEND/CONTROLLER/exportarAluno.php">
             <?= csrfCampo() ?>

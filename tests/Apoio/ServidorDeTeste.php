@@ -90,6 +90,10 @@ final class Navegador
                 return strlen($linha);
             },
         ]);
+        if (getenv('GKT_TLS_INSEGURO')) { //certificado autoassinado do container de teste
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+        }
         if ($metodo === 'POST') {
             curl_setopt($curl, CURLOPT_POST, true);
             curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($campos ?? []));

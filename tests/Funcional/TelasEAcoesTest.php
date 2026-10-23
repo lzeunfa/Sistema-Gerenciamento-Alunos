@@ -36,6 +36,19 @@ final class TelasEAcoesTest extends TesteFuncional
         }
     }
 
+    public function testPaginasNaoMandamComentariosDeDesenvolvimentoAoNavegador(): void
+    {
+        //achado do OWASP ZAP ("Suspicious Comments"): comentarios ficam no PHP, nao no HTML
+        $matricula = $this->matriculaCadastrada();
+        $paginas = ['index.php', 'privacidade.php', 'sistema.php?pagina=DASHBOARD', 'sistema.php?pagina=ALUNOS',
+            'sistema.php?pagina=CADASTRAR', 'sistema.php?pagina=TURMAS',
+            "sistema.php?pagina=EDITAR&matricula=$matricula", "sistema.php?pagina=EXCLUIR&matricula=$matricula"];
+        foreach ($paginas as $pagina) {
+            $html = str_starts_with($pagina, 'sistema') ? $this->nav->get($pagina)['corpo'] : (new Navegador())->get($pagina)['corpo'];
+            $this->assertStringNotContainsString('<!--', $html, $pagina);
+        }
+    }
+
     public function testPaginaDesconhecidaOuMaliciosaAbreODashboard(): void
     {
         foreach (['NAOEXISTE', '../../.env', '../trava', 'dashboard'] as $pagina) {

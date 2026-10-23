@@ -16,7 +16,7 @@ final class ConfiguracaoApacheTest extends TestCase
         $url = parse_url(self::base());
         //no Windows "localhost" pode virar ::1 (IPv6) e o Apache do XAMPP so escuta em 127.0.0.1
         $host = $url['host'] === 'localhost' ? '127.0.0.1' : $url['host'];
-        $socket = @fsockopen($host, $url['port'] ?? 80, $errno, $errstr, 1);
+        $socket = @fsockopen($host, $url['port'] ?? ($url['scheme'] === 'https' ? 443 : 80), $errno, $errstr, 1);
         if (!$socket) {
             self::markTestSkipped('Apache não está respondendo em ' . self::base());
         }
@@ -103,7 +103,8 @@ final class ConfiguracaoApacheTest extends TestCase
         //"Bypassing 403" do ZAP: truque que funciona em IIS/Nginx; no Apache deve ser ignorado
         foreach (['X-Original-URL: /BACKEND/CONNECTION/config.php', 'X-Rewrite-URL: /.env'] as $cabecalho) {
             $curl = curl_init(self::base());
-            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => [$cabecalho]]);
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => [$cabecalho],
+                CURLOPT_SSL_VERIFYPEER => !getenv('GKT_TLS_INSEGURO'), CURLOPT_SSL_VERIFYHOST => getenv('GKT_TLS_INSEGURO') ? 0 : 2]);
             $corpo = (string) curl_exec($curl);
             curl_close($curl);
             $this->assertStringNotContainsString('DB_PASSWORD', $corpo, $cabecalho);
@@ -131,6 +132,50 @@ final class ConfiguracaoApacheTest extends TestCase
         $corpo = $this->get('nao-existe-' . uniqid() . '.php')['corpo'];
         $this->assertStringNotContainsStringIgnoringCase('Apache/2', $corpo);
         $this->assertStringNotContainsString('C:\\xampp', $corpo);
+    }
+
+    // ---------- HTTPS (so quando o endereco testado e https, como no container) ----------
+
+    private function exigirHttps(): void
+    {
+        if (!str_starts_with(self::base(), 'https://')) {
+            $this->markTestSkipped('Sistema testado sem HTTPS (XAMPP local)');
+        }
+    }
+
+    public function testHttpRedirecionaParaHttps(): void
+    {
+        $this->exigirHttps();
+        $http = 'http://' . substr(self::base(), strlen('https://'));
+        $resposta = (new Navegador())->get($http . 'sistema.php?pagina=ALUNOS');
+        $this->assertSame(301, $resposta['status']);
+        $this->assertStringStartsWith('https://', $resposta['destino']);
+        $this->assertStringEndsWith('/sistema.php?pagina=ALUNOS', $resposta['destino']);
+    }
+
+    public function testHttpsLigaHstsECookieSeguro(): void
+    {
+        $this->exigirHttps();
+        $c = $this->get('index.php')['cabecalhos'];
+        $this->assertStringStartsWith('max-age=31536000', $c['strict-transport-security'][0] ?? '');
+        $this->assertMatchesRegularExpression('/GKTSESSID=[^;]+;.*secure/i', implode("\n", $c['set-cookie'] ?? []));
+    }
+
+    public function testTlsAntigoEhRecusado(): void
+    {
+        $this->exigirHttps();
+        foreach ([CURL_SSLVERSION_TLSv1_0 | CURL_SSLVERSION_MAX_TLSv1_0, CURL_SSLVERSION_TLSv1_1 | CURL_SSLVERSION_MAX_TLSv1_1] as $versao) {
+            $curl = curl_init(self::base() . 'index.php');
+            curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_SSLVERSION => $versao,
+                CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => 0]);
+            $this->assertFalse(curl_exec($curl), 'TLS 1.0/1.1 deveria ser recusado');
+            curl_close($curl);
+        }
+        $curl = curl_init(self::base() . 'index.php');
+        curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+            CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => 0]);
+        $this->assertNotFalse(curl_exec($curl), 'TLS 1.2 deve funcionar');
+        curl_close($curl);
     }
 
     public function testApacheSoAtendeEsteComputador(): void

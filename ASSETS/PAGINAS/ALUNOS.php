@@ -1,7 +1,7 @@
-<!--html da pagina dos alunos-->
+<?php /* html da pagina dos alunos */ ?>
 
-<!--form que realiza filtro-->
-<!--colocar action pro arquivo que faz o necessario para filtrar-->
+<?php /* form que realiza filtro */ ?>
+<?php /* colocar action pro arquivo que faz o necessario para filtrar */ ?>
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
 $filtroEscolhido = isset($_GET['filtrando']) && is_string($_GET['filtrando']) ? $_GET['filtrando'] : '';
@@ -50,7 +50,7 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
 <?php endif; ?>
 
 <?php if (empty($listaAlunosDashboard)): ?>
-    <!--caso a pesquisa nao retorne nada-->
+    <?php /* caso a pesquisa nao retorne nada */ ?>
     <h1 class="text-center mt-4 mb-4">Nenhum resultado foi encontrado!</h1>
 <?php else: ?>
     <div class="container mb-3 p-1">
@@ -74,8 +74,8 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
             <tbody>
                 <?php foreach ($listaAlunosDashboard as $aluno): ?>
                     <tr>
-                        <!-- Como não puxamos a data do BD na query, coloquei a matrícula aqui provisoriamente. 
-                     Você pode adicionar A.ALUDATANASC na query depois se quiser -->
+                        <?php /* Como não puxamos a data do BD na query, coloquei a matrícula aqui provisoriamente. 
+                     Você pode adicionar A.ALUDATANASC na query depois se quiser */ ?>
                         <td>
                             <?php
                             if (!empty($aluno['DATACADASTRO'])) {
@@ -109,7 +109,7 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
                                 <?php if (strtoupper($aluno['SITUACAO']) == 'PAGO'): ?>
                                     <span class="status-icon">✓</span>
                                 <?php else: ?>
-                                    <!-- O inactive deixa o ícone cinza ou vermelho, dependendo do seu CSS -->
+                                    <?php /* O inactive deixa o ícone cinza ou vermelho, dependendo do seu CSS */ ?>
                                     <span class="status-icon inactive">✗</span>
                                 <?php endif; ?>
                             </div>
@@ -153,17 +153,17 @@ $listaAlunosDashboard = listarAlunosCompletos($filtroEscolhido, $limite, $offset
     </div>
 <?php endif; ?>
 
-<!--section com o divisor com a logo da gkt-->
+<?php /* section com o divisor com a logo da gkt */ ?>
 <section id="divisor" class="d-flex justify-content-center align-items-center mt-3 mb-3">
     <img src="ASSETS/IMGS/LOGOS/logo_gktSF.png" alt="logo da academia gkt" width="100px">
 </section>
 
-<!--section container para as opcoes de gerenciamento-->
+<?php /* section container para as opcoes de gerenciamento */ ?>
 <section id="opcoesGerenciamento" class="d-flex flex-column justify-content-center align-items-center">
 
     <h1>Opções de gerenciamento</h1>
 
-    <!--div centralizadora das opcoes-->
+    <?php /* div centralizadora das opcoes */ ?>
     <div class="d-flex flex-wrap justify-content-center">
 
         <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">

@@ -1,4 +1,4 @@
-<!--html da pagina para casdstros-->
+<?php /* html da pagina para casdstros */ ?>
 <?php
 require_once "BACKEND/CONTROLLER/funcoes.php";
 $listarModalidades = listarModalidades();
@@ -8,7 +8,7 @@ $listarStatus = listarStatus();
 $mensagem = pegarMensagem();
 ?>
 <div class="container_form">
-    <!-- Cabeçalho -->
+    <?php /* Cabeçalho */ ?>
     <div class="page-header">
         <h1>Cadastrar Novo Aluno</h1>
         <p>Preencha os dados abaixo para cadastrar um novo aluno na academia</p>
@@ -18,11 +18,11 @@ $mensagem = pegarMensagem();
         <div class="form-mensagem form-mensagem-<?= e($mensagem['tipo']) ?>" role="alert"><?= e($mensagem['texto']) ?></div>
     <?php endif; ?>
 
-    <!-- Formulário -->
+    <?php /* Formulário */ ?>
     <div class="form-container">
         <form id="cadastroForm" method="POST" action="BACKEND/CONTROLLER/gravarAluno.php">
             <?= csrfCampo() ?>
-            <!-- Nome -->
+            <?php /* Nome */ ?>
             <div class="form-group">
                 <label class="form-label">
                     Nome Completo <span class="required">*</span>
@@ -47,7 +47,7 @@ $mensagem = pegarMensagem();
             </div>
 
 
-            <!-- CPF e Data de Nascimento -->
+            <?php /* CPF e Data de Nascimento */ ?>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">
@@ -65,7 +65,7 @@ $mensagem = pegarMensagem();
                 </div>
             </div>
 
-            <!-- Gênero -->
+            <?php /* Gênero */ ?>
             <div class="form-group">
                 <label class="form-label">
                     Gênero <span class="required">*</span>
@@ -89,7 +89,7 @@ $mensagem = pegarMensagem();
                 <input type="text" class="form-input" name="cep" placeholder="Digite o cep do aluno" maxlength="9" required>
             </div>
 
-            <!-- Endereço -->
+            <?php /* Endereço */ ?>
             <div class="form-group">
                 <label class="form-label">
                     Endereço <span class="required">*</span>
@@ -97,7 +97,7 @@ $mensagem = pegarMensagem();
                 <input type="text" class="form-input" name="endereco" placeholder="Digite o endereço do aluno" maxlength="150" required>
             </div>
 
-            <!-- Responsável legal (LGPD art. 14: dados de criança e adolescente) -->
+            <?php /* Responsável legal (LGPD art. 14: dados de criança e adolescente) */ ?>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">
@@ -115,7 +115,7 @@ $mensagem = pegarMensagem();
                 </div>
             </div>
 
-            <!-- Modalidades -->
+            <?php /* Modalidades */ ?>
             <div class="form-group">
                 <label class="form-label" required>
                     Modalidade(s) <span class="required">*</span>
@@ -142,7 +142,7 @@ $mensagem = pegarMensagem();
 
             </div>
 
-            <!-- Plano -->
+            <?php /* Plano */ ?>
             <div class="form-group">
                 <label class="form-label">
                     Plano <span class="required">*</span>
@@ -191,7 +191,7 @@ $mensagem = pegarMensagem();
                 </select>
             </div>
 
-            <!-- Transparência (LGPD art. 9) -->
+            <?php /* Transparência (LGPD art. 9) */ ?>
             <div class="form-group">
                 <div class="checkbox-option">
                     <input type="checkbox" id="ciencia_privacidade" name="ciencia_privacidade" value="1" required>
@@ -204,7 +204,7 @@ $mensagem = pegarMensagem();
             </div>
 
 
-            <!-- Botões de Ação -->
+            <?php /* Botões de Ação */ ?>
             <div class="form-actions">
                 <button type="reset" class="btn btn-secondary">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,17 +221,17 @@ $mensagem = pegarMensagem();
     </div>
 </div>
 
-<!--section com o divisor com a logo da gkt-->
+<?php /* section com o divisor com a logo da gkt */ ?>
 <section id="divisor" class="d-flex justify-content-center align-items-center mt-3 mb-3">
     <img src="ASSETS/IMGS/LOGOS/logo_gktSF.png" alt="logo da academia gkt" width="100px">
 </section>
 
-<!--section container para as opcoes de gerenciamento-->
+<?php /* section container para as opcoes de gerenciamento */ ?>
 <section id="opcoesGerenciamento" class="d-flex flex-column justify-content-center align-items-center">
 
     <h1>Opções de gerenciamento</h1>
 
-    <!--div centralizadora das opcoes-->
+    <?php /* div centralizadora das opcoes */ ?>
     <div class="d-flex flex-wrap justify-content-center">
 
         <div class="containerOpcoesGerenciamento d-flex flex-column justify-content-center align-items-center">

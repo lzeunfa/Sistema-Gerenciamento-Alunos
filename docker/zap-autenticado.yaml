@@ -5,14 +5,14 @@ env:
   contexts:
     - name: gkt
       urls:
-        - http://app/sistema.php
+        - https://app/sistema.php
       includePaths:
-        - "http://app/.*"
+        - "https://app/.*"
       excludePaths:
         # nao encerrar a sessao nem gerar bloqueio de login durante a varredura
-        - "http://app/logout\\.php.*"
-        - "http://app/BACKEND/CONTROLLER/actions\\.php.*"
-        - "http://app/index\\.php.*"
+        - "https://app/logout\\.php.*"
+        - "https://app/BACKEND/CONTROLLER/actions\\.php.*"
+        - "https://app/index\\.php.*"
   parameters:
     failOnError: true
     progressToStdout: true
@@ -22,21 +22,21 @@ jobs:
   - type: replacer
     rules:
       - description: sessao do administrador temporario
-        url: "http://app/.*"
+        url: "https://app/.*"
         matchType: req_header
         matchString: Cookie
         matchRegex: false
         replacementString: ${ZAP_COOKIE}
   - type: requestor
     requests:
-      - url: http://app/sistema.php?pagina=DASHBOARD
-      - url: http://app/sistema.php?pagina=ALUNOS
-      - url: http://app/sistema.php?pagina=TURMAS
-      - url: http://app/sistema.php?pagina=CADASTRAR
+      - url: https://app/sistema.php?pagina=DASHBOARD
+      - url: https://app/sistema.php?pagina=ALUNOS
+      - url: https://app/sistema.php?pagina=TURMAS
+      - url: https://app/sistema.php?pagina=CADASTRAR
   - type: spider
     parameters:
       context: gkt
-      url: http://app/sistema.php
+      url: https://app/sistema.php
       maxDuration: 5
   - type: passiveScan-wait
     parameters:

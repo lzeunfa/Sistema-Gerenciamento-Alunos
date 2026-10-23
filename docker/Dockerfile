@@ -12,7 +12,7 @@ RUN printf 'Acquire::Retries "5";\n' > /etc/apt/apt.conf.d/80-rede-gkt \
 
 # Driver ODBC 18 da Microsoft (o banco e preparado pelo PHP, sem sqlcmd: menos pacotes na imagem)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends gnupg curl ca-certificates unixodbc-dev \
+ && apt-get install -y --no-install-recommends gnupg curl ca-certificates unixodbc-dev openssl \
  && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
  && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list -o /etc/apt/sources.list.d/mssql-release.list \
  && apt-get update \
@@ -33,7 +33,11 @@ COPY docker/php-gkt.ini $PHP_INI_DIR/conf.d/zz-gkt.ini
 # Apache: .htaccess ligado, sem listagem de pastas, sem revelar versao
 # "zz-" para carregar depois do security.conf do Debian, que define ServerTokens OS e ServerSignature On
 COPY docker/apache-gkt.conf /etc/apache2/conf-available/zz-gkt.conf
-RUN a2enmod headers alias && a2enconf zz-gkt
+RUN a2enmod headers alias ssl rewrite && a2enconf zz-gkt
+# HTTPS: a porta 80 redireciona para a 443; certificado gerado na primeira subida (docker/entrypoint.sh)
+COPY docker/apache-https.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/entrypoint.sh /usr/local/bin/gkt-entrypoint
+RUN chmod 755 /usr/local/bin/gkt-entrypoint
 
 WORKDIR /var/www/html
 
@@ -55,7 +59,8 @@ RUN rm -rf tests phpunit.xml phpstan.neon .github \
  && chown -R root:www-data /var/www/html \
  && find /var/www/html -type d -exec chmod 750 {} + \
  && find /var/www/html -type f -exec chmod 640 {} +
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsS -o /dev/null http://127.0.0.1/index.php || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsSk -o /dev/null https://127.0.0.1/index.php || exit 1
+CMD ["gkt-entrypoint"]
 
 # ---------- testes ----------
 FROM base AS testes

@@ -24,33 +24,33 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
 
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
-    <!--fontes Rajdhani e Saira Condensed hospedadas no proprio sistema (sem Google Fonts: SRI e LGPD)-->
+    <?php /* fontes Rajdhani e Saira Condensed hospedadas no proprio sistema (sem Google Fonts: SRI e LGPD) */ ?>
     <link rel="stylesheet" href="ASSETS/FONTES/fontes.css">
 
-    <!--style-->
+    <?php /* style */ ?>
     <link rel="stylesheet" href="ASSETS/CSS/loginStyle.css">
 </head>
 
 <body>
-    <!-- Animated Background -->
+    <?php /* Animated Background */ ?>
     <div class="bg-container">
         <div class="bg-pattern"></div>
 
-        <!-- Combat Shapes -->
+        <?php /* Combat Shapes */ ?>
         <div class="combat-shape shape-1"></div>
         <div class="combat-shape shape-2"></div>
         <div class="combat-shape shape-3"></div>
 
-        <!-- Particles -->
+        <?php /* Particles */ ?>
         <div class="particle particle-1"></div>
         <div class="particle particle-2"></div>
         <div class="particle particle-3"></div>
     </div>
 
-    <!-- Main Login Container -->
+    <?php /* Main Login Container */ ?>
     <div class="login-container">
         <div class="login-wrapper">
-            <!-- Left Side - Branding -->
+            <?php /* Left Side - Branding */ ?>
             <div class="brand-side">
 
 
@@ -94,7 +94,7 @@ if (($_GET['erro'] ?? '') === 'sessao_expirada') {
                 </div>
             </div>
 
-            <!-- Right Side - Login Form -->
+            <?php /* Right Side - Login Form */ ?>
             <div class="form-side">
                 <div class="form-header">
                     <h1 class="form-title">Bem-vindo</h1>
