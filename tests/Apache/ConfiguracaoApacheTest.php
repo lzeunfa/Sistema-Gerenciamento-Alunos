@@ -37,7 +37,7 @@ final class ConfiguracaoApacheTest extends TestCase
             'BACKEND/CONNECTION/config.php', 'BACKEND/SEGURANCA/seguranca.php', 'BACKEND/CONTROLLER/funcoes.php',
             'ASSETS/PAGINAS/ALUNOS.php', 'ASSETS/PAGINAS/_acoesAluno.php', 'trava.php',
             'vendor/autoload.php', 'composer.json', 'composer.lock', 'phpstan.neon', 'phpunit.xml',
-            'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1', 'tests/carga/popular_volume.php',
+            'tests/bootstrap.php', 'tests/preparar_banco_teste.ps1', 'tests/carga/popular_volume.php', 'tests/carga/apache-carga.conf',
             'docker/Dockerfile', 'docker/docker-compose.yml', 'docker/iniciar-banco.php', 'docker/.env.example', '.dockerignore',
             'docker/backup.sh', 'docker/funcoes-banco.sh', 'docker/restaurar.sh', 'docker/copia-teste.sh',
         ]);

@@ -55,6 +55,9 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - Paginação desenhava um botão por página (com 20 mil alunos, 500 botões e 251 KB por tela); agora mostra no máximo
   9, e página além da última cai na última.
 - Tabela de tentativas de login crescia sem limite sob ataque de força bruta; o login apaga as de mais de 1 dia.
+- Dois cadastros ao mesmo tempo (duas pessoas na recepção) recebiam a mesma matrícula e o segundo falhava com
+  "erro ao cadastrar". Achado no teste de carga (1 em 168 cadastros); agora os cadastros entram em fila.
+- Uma matrícula com letras no banco impedia qualquer cadastro novo.
 
 ### Desempenho
 - Índices nas chaves estrangeiras de `ALUNOS_INSCRICAO` e em `ALUNOS.ALUSTATUS` (`DB/migracao_desempenho.sql`).

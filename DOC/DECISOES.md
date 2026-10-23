@@ -156,3 +156,14 @@ ele, sem porta aberta; `varredura.sh`, `varredura-autenticada.sh`, `teste-carga.
 cópia e a apagam no fim. O serviço `zap` do compose já aponta para ela.
 **Consequências:** D-014 (ZAP e carga a cada entrega) pode ser cumprida no próprio servidor de produção. Cada rodada
 recria o banco de teste do zero.
+
+## D-018 — Próxima matrícula gerada com trava de aplicação do SQL Server
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** o teste de carga mostrou que dois cadastros simultâneos liam o mesmo `MAX(ALUMATRICULA)` e o segundo
+falhava com chave duplicada. A matrícula é `varchar` com números sequenciais e já existe na base real, então trocar
+por `IDENTITY` ou `SEQUENCE` exigiria migrar a chave e as tabelas ligadas a ela.
+**Decisão:** `gerarProximaMatricula()` pega `sp_getapplock` exclusivo (dono: a transação do cadastro, espera até 10 s)
+antes de ler o `MAX`. Só os cadastros entram em fila; listagens e edições não esperam. Não precisa de permissão nova
+para o `gkt_app`. O `MAX` usa `TRY_CAST`, para matrículas com letras não travarem os cadastros.
+**Consequências:** `gerarProximaMatricula()` só pode ser chamada dentro de uma transação. Com milhares de cadastros
+por segundo a fila viraria gargalo, longe da realidade de uma academia.

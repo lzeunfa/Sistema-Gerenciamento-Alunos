@@ -19,13 +19,14 @@ SQL Server Express), no banco de teste.
 | OWASP ZAP sem login | 3 varreduras completas: **0 falhas** (110, 139 e 140 verificações aprovadas). Avisos corrigidos a cada rodada. |
 | OWASP ZAP logado | ~10.500 requisições com sessão de administrador válida: **nenhum alerta High**; único Medium era "site sem HTTPS", já resolvido. |
 | Revisão do código | Toda a diferença da branch lida em busca de falhas: **nenhuma vulnerabilidade explorável**; 1 ponto operacional corrigido. |
-| Bugs achados | 4 corrigidos, cada um com teste: 2 entradas que derrubavam páginas (erro 500), paginação pesada e tabela de tentativas de login sem limite. |
+| Bugs achados | 6 corrigidos, cada um com teste: 2 entradas que derrubavam páginas (erro 500), paginação pesada, tabela de tentativas de login sem limite, **cadastros simultâneos com a mesma matrícula** e matrícula com letras travando os cadastros. |
 | Escalabilidade (volume) | Com **100 mil alunos** fictícios todas as telas abaixo de 0,7 s; com 20 mil, abaixo de 0,2 s. |
+| Escalabilidade (carga) | No XAMPP, 30 pessoas ao mesmo tempo: mediana 18 ms, **0 erros**; 100 pessoas: mediana 47 ms, 0 erros. Achou e corrigiu um bug de cadastros simultâneos. |
 | Manutenibilidade | Complexidade máxima de função **30 → 13**, média 3,1; análise estática (PHPStan) no nível 5 sem erros. |
 | Backup | Scripts de backup verificado e restauração criados; parte SQL ensaiada no Windows. |
 
 **O que não deu para rodar:** o Debian saiu da rede por volta das 02h30 (provavelmente suspendeu; não responde a
-ping nem SSH). Ficaram para quando ele voltar: teste de carga (k6), nova varredura ZAP para confirmar as duas últimas
+ping nem SSH). Ficaram para quando ele voltar: teste de carga no container (k6; no Windows já foi feito), nova varredura ZAP para confirmar as duas últimas
 correções, backup/restauração e volume dentro dos containers e o teste de reinício do banco. A lista exata de
 comandos está na seção 9.
 
@@ -167,6 +168,8 @@ correção:
 | `sistema.php?pagina[]=x` | Erro 500 | Página inválida volta ao dashboard |
 | Paginação desenhava um botão por página | Com 20 mil alunos: 500 botões e 251 KB por tela | No máximo 9 botões; página além da última cai na última |
 | Tabela de tentativas de login sem limite | Sob ataque prolongado o banco crescia para sempre | Tentativas com mais de 1 dia são apagadas a cada erro de login |
+| Dois cadastros ao mesmo tempo (teste de carga) | O segundo recebia a mesma matrícula e falhava | Trava só na geração da matrícula; cadastros em fila (seção 6.2) |
+| Matrícula com letras no banco | Nenhum cadastro novo funcionava | O cálculo da próxima matrícula ignora as que não são números |
 
 A paginação nova também foi conferida no navegador, numa cópia local ligada ao banco de teste com 600 alunos
 fictícios: no máximo 9 botões ("1 2 3 … 16"), o filtro continua ao trocar de página, a última página mostra só o
@@ -199,11 +202,32 @@ página antes de montar as colunas. O SQL Server não sugeriu mais nenhum índic
 porque conta a base inteira a cada abertura; não vale otimizar antes de chegar perto disso.
 
 ### 6.2 Carga (muitas pessoas ao mesmo tempo)
-Preparado (`tests/carga/carga.js` e `docker/teste-carga.sh`), **não rodado**: o Debian saiu da rede antes. O
-cenário simula até 30 pessoas usando o sistema ao mesmo tempo (a recepção real tem 1 a 3) e um pico de 5 logins
-por segundo, com limites: 95% das telas abaixo de 0,8 s, 95% dos logins abaixo de 3 s e menos de 1% de erros. O login é lento de propósito
-(Argon2id usa ~64 MB e ~0,4 s por tentativa), o que dificulta força bruta; o teste mostra quantos logins simultâneos
-o servidor aguenta.
+Como o Debian saiu da rede, a carga foi medida no **Windows (XAMPP)**, que é o outro ambiente em que a academia pode
+rodar o sistema: uma 2ª instância do Apache do XAMPP (mesmo PHP, mesmo `.htaccess`, 150 threads), ligada ao banco de
+teste com 2.000 alunos fictícios. Mesmo cenário do k6 (`tests/carga/carga.js`): cada pessoa entra, abre o dashboard,
+5 filtros de alunos, página 2, turmas e, em 1 de cada 4 voltas, cadastra um aluno. A recepção real tem 1 a 3 pessoas.
+
+| Cenário | Pedidos | Mediana | p95 | Pior | Erros |
+|---|---|---|---|---|---|
+| 10 pessoas, 1 min | 960 telas (15/s) + 27 cadastros | 18 ms | 21 ms | 63 ms | 0 |
+| 30 pessoas, 2 min (antes da correção) | 5.600 telas (45/s) + 168 cadastros | 18 ms | 25 ms | 64 ms | **1 cadastro** |
+| 30 pessoas, 2 min (depois da correção) | 5.568 telas (45/s) + 180 cadastros | 18 ms | 25 ms | 58 ms | 0 |
+| 100 pessoas, 1,5 min (estresse) | 12.664 telas (131/s) + 383 cadastros | 47 ms | 216 ms | 2,3 s | 0 |
+| Logins, 5 por segundo, 1 min | 300 logins | 234 ms | 295 ms | 316 ms | 0 |
+| Logins, 20 por segundo, 30 s | 599 logins | 439 ms | 563 ms | 681 ms | 0 |
+
+Com 30 pessoas o Apache usou ~105 MB e meio núcleo de CPU; o SQL Server ~320 MB e um terço de núcleo (a máquina
+tem 12). O login é lento de propósito (Argon2id), o que dificulta força bruta, e mesmo assim aguenta 20 por segundo.
+
+**Bug achado pela carga:** dois cadastros ao mesmo tempo liam o mesmo "maior número de matrícula" e o segundo falhava
+com matrícula duplicada (o log do Apache mostrou a violação de chave primária). Na recepção apareceria "erro ao
+cadastrar" e seria preciso cadastrar de novo. Corrigido com uma trava do SQL Server só para a geração da matrícula
+(`sp_getapplock`): os cadastros entram em fila e as telas de consulta não esperam. Teste novo reproduz duas
+recepções cadastrando ao mesmo tempo. No mesmo trecho, uma matrícula com letras no banco impedia qualquer cadastro
+novo; também corrigido, com teste.
+
+Para repetir: `pwsh tests/carga/carga_windows.ps1` (Windows) ou `bash docker/teste-carga.sh` (Docker, k6, ainda não
+rodado).
 
 ## 7. Manutenibilidade
 

@@ -58,9 +58,19 @@ function cadastrarAluno($nome, $telefone, $email, $cpf, $genero, $dataNasc, $cep
           return false;
      }
 }
+//precisa ser chamada dentro da transacao do cadastro
 function gerarProximaMatricula($pdo)
 {
-     $sqlMat = "SELECT MAX(CAST(ALUMATRICULA AS INT)) AS maior_matricula FROM ALUNOS";
+     //dois cadastros ao mesmo tempo liam o mesmo MAX e o segundo falhava com matricula duplicada (achado no teste
+     //de carga). A trava de aplicacao enfileira so os cadastros, ate o commit/rollback; as telas de consulta nao esperam
+     $trava = $pdo->query("SET NOCOUNT ON; DECLARE @r INT;
+          EXEC @r = sp_getapplock @Resource = 'gkt_proxima_matricula', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000;
+          SELECT @r")->fetchColumn();
+     if ((int) $trava < 0) {
+          throw new PDOException("trava da proxima matricula nao obtida (codigo $trava)");
+     }
+     //TRY_CAST: uma matricula com letras (matriculaValida aceita) nao pode derrubar todos os cadastros
+     $sqlMat = "SELECT MAX(TRY_CAST(ALUMATRICULA AS INT)) AS maior_matricula FROM ALUNOS";
      $stmt = $pdo->query($sqlMat);
      $fetch = $stmt->fetch();
      $ultima_matricula = $fetch['maior_matricula'];
