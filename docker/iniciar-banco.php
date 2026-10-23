@@ -68,7 +68,7 @@ try {
         $pdo->exec("CREATE DATABASE [$banco]");
         rodar($pdo, 'estrutura', $banco);
     }
-    foreach (['dados_iniciais', 'migracao_login', 'migracao_seguranca', 'migracao_direitos_titular'] as $script) {
+    foreach (['dados_iniciais', 'migracao_login', 'migracao_seguranca', 'migracao_direitos_titular', 'migracao_desempenho'] as $script) {
         rodar($pdo, $script, $banco);
     }
 

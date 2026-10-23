@@ -48,6 +48,15 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 - Aluno cadastrado já como INATIVO ficava sem data de inativação e nunca entrava na retenção de 5 anos.
 - Erro de modalidade inexistente na edição aparecia como "CPF ou e-mail já pertence a outro aluno".
 - Matrícula com quebra de linha no final passava pela validação.
+- Login com usuário/senha enviados como lista (`inputUser[]=`) e `sistema.php?pagina[]=` davam erro 500.
+- Paginação desenhava um botão por página (com 20 mil alunos, 500 botões e 251 KB por tela); agora mostra no máximo
+  9, e página além da última cai na última.
+- Tabela de tentativas de login crescia sem limite sob ataque de força bruta; o login apaga as de mais de 1 dia.
+
+### Desempenho
+- Índices nas chaves estrangeiras de `ALUNOS_INSCRICAO` e em `ALUNOS.ALUSTATUS` (`DB/migracao_desempenho.sql`).
+- Lista de alunos escolhe as 40 matrículas da página antes de montar as colunas. Com 100 mil alunos fictícios:
+  filtro "pendentes" de 573 para 126 ms, Turmas de 197 para 95 ms.
 
 ### Segurança
 - Achados do OWASP ZAP corrigidos: CSP também nas páginas de erro do Apache; cabeçalhos
@@ -63,6 +72,7 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 ### Banco
 - Rodar de novo `DB/dados_iniciais.sql` (não duplica dados).
 - Rodar `DB/migracao_direitos_titular.sql` (situação `INATIVO` e colunas `ALUDATAINATIVACAO` e `ALUANONIMIZADO`).
+- Rodar `DB/migracao_desempenho.sql` (índices; só melhora velocidade, não muda dados).
 
 ## [1.1.0] - 2026-10-14
 

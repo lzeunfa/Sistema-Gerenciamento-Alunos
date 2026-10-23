@@ -29,20 +29,18 @@ if ($quantidade < 1 || $quantidade > 200000) {
     exit(1);
 }
 
-function cpfAleatorio(): string
+//CPF valido e unico derivado da matricula (aleatorio repetia a partir de dezenas de milhares de alunos)
+function cpfDaMatricula(int $matricula): string
 {
-    do {
-        $d = array_map(fn() => random_int(0, 9), range(1, 9));
-        for ($t = 9; $t < 11; $t++) {
-            $soma = 0;
-            for ($i = 0; $i < $t; $i++) {
-                $soma += $d[$i] * ($t + 1 - $i);
-            }
-            $d[] = ((10 * $soma) % 11) % 10;
+    $d = array_map('intval', str_split(str_pad((string) ($matricula % 1000000000), 9, '0', STR_PAD_LEFT)));
+    for ($t = 9; $t < 11; $t++) {
+        $soma = 0;
+        for ($i = 0; $i < $t; $i++) {
+            $soma += $d[$i] * ($t + 1 - $i);
         }
-        $cpf = implode('', $d);
-    } while (!cpfValido($cpf));
-    return $cpf;
+        $d[] = ((10 * $soma) % 11) % 10;
+    }
+    return implode('', $d); //matriculas sao sequenciais e nunca repetem 9 digitos iguais na faixa usada
 }
 
 $modalidades = array_map('intval', array_column(listarModalidades(), 'MODALIDADECOD'));
@@ -56,11 +54,11 @@ $lote = 200; //alunos por transacao
 for ($feitos = 0; $feitos < $quantidade; $feitos += $lote) {
     $pdo->beginTransaction();
     $aluno = $pdo->prepare("INSERT INTO ALUNOS (ALUMATRICULA, ALUNOME, ALUTELEFONE, ALUEMAIL, ALUCPF, ALUSEX, ALUDATANASC, ALUCEP, ALUENDERECO, ALUSTATUS, DATACADASTRO, ALUCIENCIAPRIVACIDADE)
-        VALUES (?, ?, '61999990000', ?, ?, ?, ?, '70000000', 'Rua Ficticia 1', ?, DATEADD(DAY, -?, GETDATE()), GETDATE())");
+        VALUES (?, ?, '61999990000', ?, ?, ?, ?, '70000000', 'Rua Ficticia 1', ?, DATEADD(DAY, -CAST(? AS INT), GETDATE()), GETDATE())");
     $inscricao = $pdo->prepare("INSERT INTO ALUNOS_INSCRICAO (ALUNOMAT, ALUNOMOD, ALUNOPLANO, ALUNOOPCAO) VALUES (?, ?, ?, ?)");
     for ($i = 0; $i < $lote && $feitos + $i < $quantidade; $i++) {
         $matricula = (string) $proxima++;
-        $aluno->execute([$matricula, "VOLUME $matricula", "volume.$matricula@exemplo.invalid", cpfAleatorio(),
+        $aluno->execute([$matricula, "VOLUME $matricula", "volume.$matricula@exemplo.invalid", cpfDaMatricula((int) $matricula),
             random_int(0, 1) ? 'M' : 'F', date('Y-m-d', strtotime('-' . random_int(6, 70) . ' years')),
             $status[array_rand($status)], random_int(0, 1800)]);
         $plano = $planos[array_rand($planos)];

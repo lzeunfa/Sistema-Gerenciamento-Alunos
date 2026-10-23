@@ -69,6 +69,8 @@ if ($data && $senhaConfere) {
 
 $stmt = $pdo->prepare("INSERT INTO LOGIN_TENTATIVAS (CHAVE) VALUES (:login), (:ip)");
 $stmt->execute([':login' => 'login:' . strtolower($userName), ':ip' => 'ip:' . $ip]);
+//so os ultimos 15 minutos importam para o bloqueio; sem esta limpeza a tabela cresceria para sempre sob ataque
+$pdo->exec("DELETE FROM LOGIN_TENTATIVAS WHERE DATAHORA < DATEADD(DAY, -1, GETDATE())");
 registrarAuditoria('login_falha', '', $userName);
 
 //mesma mensagem para usuario inexistente e senha errada, para nao revelar quais usuarios existem

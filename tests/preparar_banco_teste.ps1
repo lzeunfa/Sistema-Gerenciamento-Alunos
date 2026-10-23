@@ -20,7 +20,7 @@ if ($Banco -notmatch '_teste$') { throw "Por seguranca o banco de teste precisa 
 
 Sql "IF DB_ID('$Banco') IS NOT NULL BEGIN ALTER DATABASE [$Banco] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$Banco]; END; CREATE DATABASE [$Banco];"
 
-foreach ($script in 'estrutura', 'dados_iniciais', 'migracao_login', 'migracao_seguranca', 'migracao_direitos_titular') {
+foreach ($script in 'estrutura', 'dados_iniciais', 'migracao_login', 'migracao_seguranca', 'migracao_direitos_titular', 'migracao_desempenho') {
     $conteudo = (Get-Content (Join-Path $raiz "DB\$script.sql") -Raw -Encoding utf8) -replace '\[gktgym\]', "[$Banco]"
     $arquivo = Join-Path $temp "$script.sql"
     Set-Content $arquivo $conteudo -Encoding utf8

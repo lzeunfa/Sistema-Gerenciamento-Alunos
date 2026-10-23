@@ -169,6 +169,27 @@ final class TelasEAcoesTest extends TesteFuncional
         }
     }
 
+    public function testPaginacaoNaoDesenhaUmBotaoPorPagina(): void
+    {
+        //achado do teste de volume: com 20 mil alunos a tela desenhava 500 botoes (251 KB por pagina)
+        $pdo = Database::getConexao();
+        $pdo->exec("WITH n AS (SELECT TOP 2000 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i FROM sys.all_objects a CROSS JOIN sys.all_objects b)
+            INSERT INTO ALUNOS (ALUMATRICULA, ALUNOME, ALUTELEFONE, ALUEMAIL, ALUCPF, ALUDATANASC, ALUSTATUS)
+            SELECT CAST(30000 + i AS varchar), 'VOLUME ' + CAST(i AS varchar), '61999990000', 'v' + CAST(i AS varchar) + '@exemplo.invalid',
+                   RIGHT('00000000000' + CAST(i AS varchar), 11), '1990-01-01', 1 FROM n;
+            INSERT INTO ALUNOS_INSCRICAO (ALUNOMAT, ALUNOMOD, ALUNOPLANO, ALUNOOPCAO) SELECT ALUMATRICULA, 1, 1, 1 FROM ALUNOS");
+
+        foreach (['ALUNOS', 'TURMAS&filtrando=1'] as $tela) {
+            $html = $this->nav->get("sistema.php?pagina=$tela&p=25")['corpo'];
+            $this->assertLessThanOrEqual(11, substr_count($html, 'class="page-link"'), "$tela: no maximo 9 paginas + Anterior/Proxima");
+            $this->assertStringContainsString('>50</a>', $html, "$tela: ultima pagina (2000 alunos / 40) aparece");
+            $this->assertStringContainsString('…', $html);
+            $this->assertLessThan(150 * 1024, strlen($html), "$tela: pagina leve");
+        }
+        $ultima = $this->nav->get('sistema.php?pagina=ALUNOS&p=999')['corpo'];
+        $this->assertMatchesRegularExpression('/>\s*VOLUME 1\s*</', $ultima, 'pagina alem do fim mostra a ultima (alunos mais antigos)');
+    }
+
     public function testFiltroDaTelaDeAlunos(): void
     {
         $this->cadastrarPeloFormulario(['nome' => 'homem', 'genero' => 'masculino']);

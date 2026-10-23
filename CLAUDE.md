@@ -32,6 +32,7 @@ composer analise
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_login.sql
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_seguranca.sql
 sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_direitos_titular.sql
+sqlcmd -S "localhost\SQLEXPRESS" -E -C -i DB\migracao_desempenho.sql
 
 # retenção de 5 anos: sem parâmetro só simula; com --executar anonimiza os inativos há mais de 5 anos
 C:\xampp\php\php.exe DB/anonimizar_antigos.php --executar

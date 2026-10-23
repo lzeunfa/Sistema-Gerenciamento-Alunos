@@ -129,6 +129,18 @@ final class LoginESessaoTest extends TesteFuncional
         $this->assertSame(0, (int) $restantes);
     }
 
+    public function testTentativasAntigasSaoApagadasParaATabelaNaoCrescerSemLimite(): void
+    {
+        //sob ataque de forca bruta prolongado a tabela cresceria para sempre
+        $pdo = Database::getConexao();
+        $pdo->exec("INSERT INTO LOGIN_TENTATIVAS (CHAVE, DATAHORA) SELECT TOP 500 'ip:10.0.0.1', DATEADD(DAY, -2, GETDATE()) FROM sys.all_objects");
+        $this->tentarLogin(self::LOGIN, 'senha-errada-qualquer');
+        $antigas = $pdo->query("SELECT COUNT(*) FROM LOGIN_TENTATIVAS WHERE DATAHORA < DATEADD(DAY, -1, GETDATE())")->fetchColumn();
+        $this->assertSame(0, (int) $antigas);
+        $recentes = $pdo->query("SELECT COUNT(*) FROM LOGIN_TENTATIVAS")->fetchColumn();
+        $this->assertSame(2, (int) $recentes, 'a tentativa errada de agora continua contando (login e IP)');
+    }
+
     public function testSenhaAntigaEmBcryptViraArgon2idNoLogin(): void
     {
         Database::getConexao()->prepare("UPDATE ADMINISTRACAO SET ADMSENHA = :h WHERE ADMLOGIN = :l")

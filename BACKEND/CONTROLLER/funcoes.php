@@ -129,11 +129,11 @@ const FROM_ALUNOS_COMPLETOS = "FROM ALUNOS A
 
 //filtros das telas Alunos e Turmas. Lista fixa (whitelist): texto desconhecido = sem filtro.
 //Numero = codigo da modalidade (tela Turmas), passado como parametro.
-//Devolve [clausula WHERE, parametros].
-function filtroAlunos($filtro): array
+//Devolve [clausula WHERE, parametros]. $sufixo diferencia o parametro quando o filtro aparece duas vezes no SQL.
+function filtroAlunos($filtro, string $sufixo = ""): array
 {
      if (is_string($filtro) && ctype_digit($filtro)) {
-          return [" WHERE I.ALUNOMOD = :modalidade ", [':modalidade' => (int) $filtro]];
+          return [" WHERE I.ALUNOMOD = :modalidade$sufixo ", [":modalidade$sufixo" => (int) $filtro]];
      }
      $filtros = [
           'alunos_pendentes' => "S.STATUSALU = 'PENDENTE'",
@@ -151,6 +151,21 @@ function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
 {
      $pdo = Database::getConexao();
      [$clausulaWhere, $parametros] = filtroAlunos($filtro);
+     $paginar = $limite !== null && $offset !== null;
+
+     //com paginacao, escolhe primeiro as matriculas da pagina e so depois monta as colunas (STRING_AGG etc.)
+     //dessas poucas: com 100 mil alunos o tempo nao cresce com o tamanho da tabela inteira
+     $pagina = "";
+     if ($paginar) {
+          [$wherePagina, $parametrosPagina] = filtroAlunos($filtro, '_pagina');
+          $parametros += $parametrosPagina;
+          $pagina = "INNER JOIN (
+                    SELECT A.ALUMATRICULA " . FROM_ALUNOS_COMPLETOS . " $wherePagina
+                    GROUP BY A.ALUMATRICULA
+                    ORDER BY A.ALUMATRICULA DESC
+                    OFFSET :offset ROWS FETCH NEXT :limite ROWS ONLY
+               ) PG ON PG.ALUMATRICULA = A.ALUMATRICULA";
+     }
 
      $sql = "SELECT
                  A.ALUMATRICULA,
@@ -163,20 +178,17 @@ function listarAlunosCompletos($filtro = "", $limite = null, $offset = null)
                  S.STATUSALU AS SITUACAO,
                  A.ALUANONIMIZADO
              " . FROM_ALUNOS_COMPLETOS . "
+             $pagina
              $clausulaWhere
              GROUP BY
                  A.ALUMATRICULA, A.DATACADASTRO, A.ALUNOME, A.ALUCPF, P.PLANO, O.OPCAO, S.STATUSALU, A.ALUANONIMIZADO
              ORDER BY A.ALUMATRICULA DESC";
 
-     if ($limite !== null && $offset !== null) {
-          $sql .= " OFFSET :offset ROWS FETCH NEXT :limite ROWS ONLY";
-     }
-
      $stmt = $pdo->prepare($sql);
      foreach ($parametros as $nome => $valor) {
           $stmt->bindValue($nome, $valor, PDO::PARAM_INT);
      }
-     if ($limite !== null && $offset !== null) {
+     if ($paginar) {
           $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
           $stmt->bindValue(':limite', (int)$limite, PDO::PARAM_INT);
      }
@@ -197,6 +209,48 @@ function contarAlunosCompletos($filtro = "")
      $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
      return $resultado ? (int)$resultado['total'] : 0;
 }
+
+// ---------- Paginacao das telas Alunos e Turmas ----------
+
+//numero da pagina vindo da URL (?p=): so inteiros positivos; qualquer outra coisa vira 1
+function paginaDaUrl($valor): int
+{
+     return is_string($valor) && ctype_digit($valor) && (int) $valor > 0 ? (int) $valor : 1;
+}
+
+//numeros de pagina para os botoes: a primeira, a ultima e $raio de cada lado da atual;
+//null marca um salto ("..."). Ex.: atual 50 de 500 -> [1, null, 48, 49, 50, 51, 52, null, 500]
+function paginasVisiveis(int $atual, int $total, int $raio = 2): array
+{
+     if ($total <= 1) {
+          return [];
+     }
+     $paginas = array_unique(array_merge([1, $total], range(max(1, $atual - $raio), min($total, $atual + $raio))));
+     sort($paginas);
+     $resultado = [];
+     foreach ($paginas as $i => $pagina) {
+          if ($i > 0 && $pagina - $paginas[$i - 1] > 1) {
+               $resultado[] = null;
+          }
+          $resultado[] = $pagina;
+     }
+     return $resultado;
+}
+
+//dados de uma pagina da lista de alunos; pagina alem da ultima cai na ultima
+function dadosListagem($filtro, $paginaPedida, int $porPagina = 40): array
+{
+     $total = contarAlunosCompletos($filtro);
+     $totalPaginas = max(1, (int) ceil($total / $porPagina));
+     $pagina = min(paginaDaUrl($paginaPedida), $totalPaginas);
+     return [
+          'alunos' => listarAlunosCompletos($filtro, $porPagina, ($pagina - 1) * $porPagina),
+          'pagina' => $pagina,
+          'totalPaginas' => $totalPaginas,
+          'total' => $total,
+     ];
+}
+
 // ---------- Validacao dos dados do aluno (cadastro e edicao usam as mesmas regras) ----------
 
 //le um campo de texto do POST; arrays e outros tipos viram texto vazio

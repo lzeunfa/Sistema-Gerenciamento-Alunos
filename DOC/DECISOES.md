@@ -92,3 +92,35 @@ orquestrados pelo `docker compose`. Sem `.env`, o `config.php` lê as mesmas cha
 **Consequências:** senhas ficam em `docker/.env` (fora do Git e da imagem). O banco não é exposto na rede. Scripts
 `.sh` precisam de quebra de linha LF (`.gitattributes`). O CI sobe os containers e roda todos os testes no Linux.
 O XAMPP continua funcionando como antes.
+
+## D-011 — HTTPS no container, com certificado por instalação
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** o OWASP ZAP apontou "HTTP Only Site". Sem HTTPS, senha e cookie de sessão trafegam abertos na rede
+da academia.
+**Decisão:** o Apache do container serve só HTTPS (TLS 1.2/1.3, cifras do perfil "intermediate" da Mozilla); a
+porta 80 redireciona. Na primeira subida, `docker/entrypoint.sh` gera um certificado autoassinado **só daquela
+instalação** (volume `certificados`), que pode ser trocado por um certificado real. HSTS em todas as respostas.
+**Consequências:** o navegador avisa sobre o certificado autoassinado até a academia instalar um real (ou aceitar
+o aviso uma vez por computador). Com HTTPS o cookie de sessão fica `Secure` sozinho (`conexaoSegura()`).
+
+## D-012 — Fontes hospedadas no próprio sistema
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** a tela de login carregava fontes do Google Fonts: sem verificação de integridade (SRI) possível e
+com o IP de cada visitante enviado ao Google.
+**Decisão:** Rajdhani e Saira Condensed (licença OFL) em `ASSETS/FONTES`, só os alfabetos latinos.
+**Consequências:** a CSP não libera mais nenhum domínio do Google; a tela de login não carrega nada de outro site.
+Fonte nova? Coloque o arquivo em `ASSETS/FONTES` e declare em `fontes.css`.
+
+## D-013 — Só os métodos HTTP GET, POST e HEAD
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** o ZAP identificava o servidor usando OPTIONS/TRACE/TRACK; o sistema não usa nenhum outro método.
+**Decisão:** `<LimitExcept GET POST HEAD>` no `.htaccess` recusa os demais (403/405).
+**Consequências:** uma API futura que precise de PUT/DELETE terá de liberar o método explicitamente.
+
+## D-014 — Toda mudança passa por testes no container, varredura ZAP e teste de carga
+**Data:** 2026-10-23 · **Situação:** Aceita
+**Contexto:** o container é a simulação mais próxima da produção; vários problemas (versão do Apache exposta,
+cabeçalhos ausentes, entradas em lista derrubando páginas) só apareceram assim.
+**Decisão:** antes de cada entrega: testes automatizados no container, varredura ZAP com e sem login e teste de
+carga (k6), conforme `docker/README.md`. O CI do GitHub roda os testes no container a cada push.
+**Consequências:** uma entrega leva cerca de 40 minutos de verificação automática; achado novo vira teste.

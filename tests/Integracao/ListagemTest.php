@@ -118,6 +118,32 @@ final class ListagemTest extends TesteComBanco
         $this->assertCount(0, listarAlunosCompletos('', 40, 80));
     }
 
+    public function testDadosListagemCalculaPaginasELevaPaginaAlemDoFimParaAUltima(): void
+    {
+        for ($i = 0; $i < 45; $i++) {
+            Database::getConexao()->exec("INSERT INTO ALUNOS (ALUMATRICULA, ALUNOME, ALUTELEFONE, ALUEMAIL, ALUCPF, ALUDATANASC, ALUSTATUS)
+                VALUES ('" . (20000 + $i) . "', 'ALUNO $i', '6199999$i', 'a$i@exemplo.invalid', '" . str_pad((string) $i, 11, '9', STR_PAD_LEFT) . "', '1990-01-01', 1);
+                INSERT INTO ALUNOS_INSCRICAO (ALUNOMAT, ALUNOMOD, ALUNOPLANO, ALUNOOPCAO) VALUES ('" . (20000 + $i) . "', 1, 1, 1)");
+        }
+        $primeira = dadosListagem('', null);
+        $this->assertSame(1, $primeira['pagina']);
+        $this->assertSame(2, $primeira['totalPaginas']);
+        $this->assertSame(45, $primeira['total']);
+        $this->assertCount(40, $primeira['alunos']);
+
+        $alem = dadosListagem('', '999');
+        $this->assertSame(2, $alem['pagina'], 'pagina 999 cai na ultima');
+        $this->assertCount(5, $alem['alunos']);
+    }
+
+    public function testDadosListagemSemAlunosTemUmaPaginaVazia(): void
+    {
+        $vazia = dadosListagem('', '3');
+        $this->assertSame(1, $vazia['pagina']);
+        $this->assertSame(1, $vazia['totalPaginas']);
+        $this->assertSame([], $vazia['alunos']);
+    }
+
     public function testAlunoSemInscricaoNaoApareceNaLista(): void
     {
         //comportamento atual: a lista junta com ALUNOS_INSCRICAO (INNER JOIN)
